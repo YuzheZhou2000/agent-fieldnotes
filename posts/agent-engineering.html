@@ -194,7 +194,7 @@
 <p>MCP 规范仓库在本次 README 指向 <code>2026-07-28</code> schema。应选定协议版本阅读，尤其扩展 proposal 与正式规范不能混为已经上线的标准。<sup><a href="#cite-12">[12]</a></sup></p>
 <h3 id="6-agent">6. 多 Agent 的上下文与写入控制</h3>
 <p>Anthropic 研究系统把子 Agent 当独立检索与压缩单元；Cognition 的实践强调单写者周围的 review 与能力咨询。它们适合不同任务：广泛研究有很多独立子问题，代码修改有更多共享决策和依赖。<sup><a href="#cite-14">[14]</a></sup><sup><a href="#cite-15">[15]</a></sup></p>
-<p>每个子任务应有目标、证据输入、权限、输出格式和停止条件。主 Agent 需要能处理迟到结果、父任务取消、重复探索和不一致事实。更多 Agent 不是质量保证；要测量并发减少了多少真实时间，又增加了多少费用和协调错误。</p>
+<p>完整的拓扑、交接合同、调度与基线比较见 <a href="agent-teams.html">Agent Teams 深度专题</a>。每个子任务应有目标、证据输入、权限、输出格式和停止条件。主 Agent 需要能处理迟到结果、父任务取消、重复探索和不一致事实。更多 Agent 不是质量保证；要测量并发减少了多少真实时间，又增加了多少费用和协调错误。</p>
 <h3 id="7">7. 权限、隔离与凭据</h3>
 <p>官方 containment 材料区分模型行为、执行环境与外部内容。Muse 披露 Sentinel 出网审核，Claude 披露 OS sandbox 与 VM 路径；开源 Sandbox Runtime 可以阅读实际文件系统与网络策略。<sup><a href="#cite-4">[4]</a></sup><sup><a href="#cite-16">[16]</a></sup><sup><a href="#cite-17">[17]</a></sup></p>
 <p>不要将“网络默认拒绝”理解成“文件读取也默认拒绝”。本次 Sandbox Runtime README 明确默认 reads 可见范围较广，写入与网络采用不同默认规则。阅读策略优先级与平台差异，常常比复制一个配置示例更重要。<sup><a href="#cite-17">[17]</a></sup></p>
