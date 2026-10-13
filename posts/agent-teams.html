@@ -108,7 +108,7 @@
 </tbody>
 </table></div>
 <p>这是一组本文的工程分类，不是统一行业标准。判别依据是决策权、状态和交互，不能仅数模型调用、提示词中的职位名称或聊天窗口。单 Agent 可以并行调用多个只读工具；一个多角色流水线也可能没有自主团队协作。</p>
-<p>另一个容易混淆的概念是 <strong>面向人类团队的 AI teammate / Team agent</strong>：它描述服务对象或产品定位，可能只是共享工作台中的一个助手。这个名称不能证明后台采用多 Agent 系统；具体产品应另外核查其工作流、权限与代码，不能按名称归类。</p>
+<p>另一个容易混淆的概念是 <strong>面向人类团队的 AI teammate / Team agent</strong>：它描述服务对象或产品定位，可能只是共享工作台中的一个助手。这个名称不能证明后台采用多 Agent 系统；具体产品应另外核查其工作流、权限与代码，不能按名称归类。三种候选的核查见 <a href="team-agent-products.html">Team agent 选型对照</a>。</p>
 <h3 id="h-89063414d7ea">Claude Code 的 Agent Teams 是一个具体功能</h3>
 <p>2026-10-13 的官方滚动文档仍将 Teams 标为实验性、默认关闭：lead 协调独立 Claude Code 会话，成员有独立上下文、直接消息和依赖任务板，认领任务使用文件锁。功能只在交互模式启动 teammates，<code>-p</code> 和 Agent SDK 会话不因启用变量而获得相同 Teams 机制。<sup><a href="#cite-9">[9]</a></sup></p>
 <p><strong>不要沿用“subagents 绝不能直接通信”的旧二分法。</strong> 当前具名 subagents 配备 <code>SendMessage</code> 时也能通信；启用 Teams 后，某些具名委派会成为 teammates。任务板、生命周期与控制权仍需分别核查。<sup><a href="#cite-10">[10]</a></sup></p>
@@ -564,7 +564,7 @@
 </div></footer>
 </article>
 </div>
-<a class="next-article" href="openai.html"><small>继续阅读 →</small><strong>Agent 运行时：工具循环、Harness 与执行环境</strong></a>
+<a class="next-article" href="team-agent-products.html"><small>继续阅读 →</small><strong>Team agent 选型：业务流程与 CLI 协调</strong></a>
 </main>
 <footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-13 · 正文与来源随 Git 维护</span></footer>
 </div>
