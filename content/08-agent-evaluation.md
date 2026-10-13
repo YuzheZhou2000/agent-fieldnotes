@@ -2,7 +2,7 @@
 {
   "slug": "agent-evaluation",
   "title": "长任务评测：产物、轨迹与基础设施噪声",
-  "topic": "Agent Engineering",
+  "topic": "评测与交付",
   "summary": "从 AgencyBench、AgentLAB 与 METR 的评测口径出发，区分交付质量、可靠性、安全和环境造成的分数差异。",
   "order": 8,
   "updated": "2026-10-13",

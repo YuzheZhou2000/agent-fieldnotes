@@ -2,7 +2,7 @@
 {
   "slug": "agent-memory",
   "title": "Agent 记忆进入策略层：文件操作与异构路由",
-  "topic": "Agent Engineering",
+  "topic": "记忆与上下文",
   "summary": "比较 CAMG 与 MemAgent 的状态范围、训练对象和评测协议，设计能区分记住、检索与真正使用的实验。",
   "order": 7,
   "updated": "2026-10-13",

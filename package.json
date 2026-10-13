@@ -1,0 +1,11 @@
+{
+  "name": "agent-fieldnotes",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs --check && node --check assets/site.js && node --check assets/search-index.js && python3 scripts/check_site.py"
+  },
+  "engines": {"node": ">=20"},
+  "devDependencies": {"markdown-it": "14.3.0"}
+}

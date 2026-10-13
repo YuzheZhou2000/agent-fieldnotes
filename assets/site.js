@@ -65,11 +65,22 @@
     if (empty) empty.hidden = count !== 0;
   }
   searchInput?.addEventListener("input", filterCards);
+  function selectFilter(topic) {
+    filter = topic;
+    document.querySelectorAll("[data-filter]").forEach(button => {
+      button.setAttribute("aria-pressed", String(button.dataset.filter === topic));
+    });
+    filterCards();
+  }
   document.querySelectorAll("[data-filter]").forEach(button => {
-    button.addEventListener("click", () => {
-      filter = button.dataset.filter;
-      document.querySelectorAll("[data-filter]").forEach(b => b.setAttribute("aria-pressed", String(b === button)));
-      filterCards();
+    button.addEventListener("click", () => selectFilter(button.dataset.filter));
+  });
+  document.querySelectorAll("[data-choose-topic]").forEach(link => {
+    link.addEventListener("click", event => {
+      event.preventDefault();
+      if (searchInput) searchInput.value = "";
+      selectFilter(link.dataset.chooseTopic);
+      document.querySelector("#library")?.scrollIntoView();
     });
   });
 

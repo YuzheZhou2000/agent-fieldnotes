@@ -1,18 +1,38 @@
 ---
 {
   "slug": "agent-engineering",
-  "title": "Agent 工程学习路线：运行时、工具、记忆与评测",
-  "topic": "Agent Engineering",
-  "summary": "把六家产品的公开经验整理成八个工程问题与四周学习项目，附协议、开源框架和论文阅读清单。",
+  "title": "Agent 系统设计：八个问题与可验证研究路径",
+  "topic": "评测与交付",
+  "summary": "用状态、工具、记忆、权限与验收约束组织系统设计，选择最小可证伪实验，再逐项增加复杂度。",
   "order": 6,
   "updated": "2026-10-13",
-  "tags": ["MCP", "RLM", "LangGraph", "学习路线"]
+  "tags": ["系统设计", "RLM", "LangGraph", "实验方法"],
+  "minutes": 22
 }
 ---
 
+## 从失败模式选择研究方向
+
+专业系统设计从可观察失败出发：任务为什么停了、约束在哪里丢了、工具为什么选错、副作用是否重复、验收有没有测到真实目标。下面八个方向是设计清单；厂商与框架只作为实现材料，不作为分类轴。
+
+| 观察到的失败 | 优先研究的问题 | 必须保存的证据 | 深入笔记 |
+|---|---|---|---|
+| 工具迟到、取消后仍执行 | 运行时与调度 | call ID、时间线、最终状态 | [运行时合同](openai.html) |
+| 重启后丢目标或重复行动 | 持久状态与恢复 | 事件位置、工作区版本、幂等记录 | [长任务状态](claude.html) |
+| 记忆存在却没有被使用 | 记忆策略与上下文 | 写—读—用链、初始化池、任务顺序 | [记忆进入策略层](agent-memory.html) |
+| 能力漏发现、跨服务不一致 | 工具与协议 | schema、权限、关联 ID、产物版本 | [工具系统](gemini.html) |
+| 外部内容改变了授权目标 | 权限与安全 | 来源传播、动作范围、实际影响 | [行动边界](muse.html) |
+| 分数上升但交付不稳定 | 评测与交付 | trial、grader、资源和完整费用 | [长任务评测](agent-evaluation.html) |
+
+## 复杂度应该购买什么收益
+
+以下是工程判断框架，未跑对照实验：先固定模型、预算、任务与 grader，建立串行基线；一次只改变一个主要机制。增加子 Agent 应减少真实关键路径或提高覆盖，增加记忆应减少跨上下文错误，增加代码式调用应降低中间结果负担。若只有 token、工具次数或局部评分变好，仍需核查最终 outcome。
+
+把成本写成完整轨迹账本：推理与缓存、工具、环境空闲、重试、子任务和存储。比较每成功任务费用，同时保留失败花费。对在线记忆固定任务顺序与初始快照，另测乱序；对服务化运行时加入超时与恢复；对 grader 抽样人工核查分歧。指标和样本量随目标选择，不能用一套平均分概括所有任务。
+
 ## 从产品名单转向工程问题
 
-本期几家官方材料呈现共同方向：Agent 持续工作、拥有执行环境、按需使用大量工具、携带长期状态，并向用户交付可验证产物。OpenAI Agents API、Anthropic Managed Agents 与 Gemini 工作 Agent 从不同侧面披露了这些能力，Muse 则突出个人身份与受控外部行动。<sup><a href="#cite-1">[1]</a></sup><sup><a href="#cite-2">[2]</a></sup><sup><a href="#cite-3">[3]</a></sup><sup><a href="#cite-4">[4]</a></sup>
+以下公开实现材料呈现共同方向：Agent 持续工作、拥有执行环境、按需使用大量工具、携带长期状态，并向用户交付可验证产物。OpenAI Agents API、Anthropic Managed Agents 与 Gemini 工作 Agent 从不同侧面披露了这些能力，Muse 则突出个人身份与受控外部行动。<sup><a href="#cite-1">[1]</a></sup><sup><a href="#cite-2">[2]</a></sup><sup><a href="#cite-3">[3]</a></sup><sup><a href="#cite-4">[4]</a></sup>
 
 这是跨厂商材料支持的工程趋势；不能据此断定各家采用相同架构，也不构成产品排名。真正有学习价值的主线是八个问题：循环、状态、上下文、工具、协作、权限、成本和评测。
 
@@ -35,7 +55,7 @@
 
 ### 2. Durable execution 与恢复
 
-Anthropic 的持久 Session 在 Harness 外保存事件，LangGraph 用 checkpointer / thread id 保存工作流进度。二者都提供恢复能力，但恢复并不总是从相同代码行继续。LangGraph 文档明确重放从 node 或 entrypoint 的适当起点开始。<sup><a href="#cite-2">[2]</a></sup><sup><a href="#cite-6">[6]</a></sup>
+Anthropic 的持久 Session 在 Harness 外保存事件，LangGraph 用 checkpointer / thread id 保存工作流进度。二者都提供恢复能力，但恢复并不总是从相同代码行继续。当前 Checkpointers 文档说明，重放跳过检查点之前的节点，重新执行之后的节点，包括 LLM 与 API 调用。<sup><a href="#cite-2">[2]</a></sup><sup><a href="#cite-6">[6]</a></sup>
 
 因此，应把副作用包装成可记录的任务，并使用幂等键或外部状态查询。执行成功却没持久化结果是典型的不确定区间。**检查点能记住系统知道的状态，不能自动知道外部世界已发生但尚未被记录的行动。**
 
@@ -151,6 +171,8 @@ GitHub 项目发现可用组合查询，例如 `agent in:readme language:python 
 
 ## 更新记录与证据边界
 
+- 2026-10-13：改为技术问题索引，补充失败→研究方向→证据映射，以及复杂度增量实验；保留既有八个方向和四周项目。
+
 - 2026-10-13：创建八个工程方向、四周学习计划与资料地图。
 - RLM 阅读范围为论文摘要和作者仓库；没有审查论文全部实验，也没有训练或跑分。
 - Code Mode、LangGraph 与 Sandbox 阅读的是官方文档和 README，未部署生产实例。
@@ -164,7 +186,7 @@ GitHub 项目发现可用组合查询，例如 `agent in:readme language:python 
 <li id="cite-3"><a href="https://cloud.google.com/blog/products/ai-machine-learning/welcome-to-gemini-at-work-2026">Google Cloud · Gemini at Work 2026</a><span class="source-meta">2026-10-08 · 官方架构披露已读取</span></li>
 <li id="cite-4"><a href="https://about.fb.com/news/2026/09/introducing-muse-personal-ai-agent/">Meta · Introducing Muse</a><span class="source-meta">2026-09-08 · 官方产品披露已读取</span></li>
 <li id="cite-5"><a href="https://github.com/google-gemini/gemini-cli">Gemini CLI · README、代码与课程入口</a><span class="source-meta">2026-10-13 读取 · 源码快照在 Gemini 篇 · 课程未逐节观看</span></li>
-<li id="cite-6"><a href="https://docs.langchain.com/oss/python/langgraph/durable-execution">LangGraph · Durable execution</a><span class="source-meta">滚动官方文档 · 2026-10-13 读取 · 重放、幂等与 durability 区别</span></li>
+<li id="cite-6"><a href="https://docs.langchain.com/oss/python/langgraph/checkpointers">LangGraph · Checkpointers</a><span class="source-meta">滚动官方文档 · 2026-10-13 核查 · 原 durable-execution 入口已重定向；现文档保留重放与 durability 说明</span></li>
 <li id="cite-7"><a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic · Effective context engineering</a><span class="source-meta">2025-09-29 · 基础材料，已读取</span></li>
 <li id="cite-8"><a href="https://arxiv.org/abs/2512.24601">Zhang, Kraska, Khattab · Recursive Language Models</a><span class="source-meta">2025-12-31 首次提交，v3 2026-05-11 · 读取摘要与版本信息，未独立复测</span></li>
 <li id="cite-9"><a href="https://github.com/alexzhang13/rlm">RLM · 作者维护的实现与 minimal / 教程入口</a><span class="source-meta">2026-10-13 README 已读取 · Python 3.11+ · 默认 local 执行环境需理解</span></li>
