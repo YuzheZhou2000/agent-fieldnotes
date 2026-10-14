@@ -70,6 +70,9 @@ for (let i = 0; i < posts.length; i++) {
   }
   toc += nested ? '</ul></li>\n' : '</li>\n';
   toc += '<li><a href="#sources">来源与证据说明</a></li>\n</ul>';
+  if (post.collapsibleToc) {
+    toc = '<details><summary>展开章节与题目目录</summary>' + toc + '</details>';
+  }
   const next = posts[(i + 1) % posts.length];
   const split = post.title.indexOf('：');
   const titleLines = split < 0 ? escape(post.title) : `<span class="title-line">${escape(post.title.slice(0,split+1))}</span><span class="title-line">${escape(post.title.slice(split+1))}</span>`;

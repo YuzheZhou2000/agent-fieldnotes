@@ -16,6 +16,8 @@
 
 `content/*.md` 使用 JSON frontmatter：`slug`、`title`、`topic`、`summary`、`order`、`updated`、`tags`、`minutes`。`order` 是稳定笔记编号，`minutes` 是阅读时间估计；来源列表使用 `cite-N`，引用指向同一篇的来源 ID。
 
+长篇指南可设置可选字段 `collapsibleToc: true`，以可展开目录保留全部章节与题目锚点，避免手机阅读时目录占据过长的首段空间。资料核查日使用 `updated`，网站发布日可另记为 `published`，不能将发布日当作重新研究的日期。
+
 ```sh
 npm ci --ignore-scripts
 npm run build
