@@ -26,10 +26,10 @@
 <h1><span class="title-line">设计可验证的</span><span class="title-line"><em>Agent</em> 系统。</span></h1>
 <p class="hero-intro">面向专业 Agent 工程师。从技术问题进入研究：拆解机制与接口，比较实现取舍，用可追溯的证据检验适用条件。</p>
 <div class="hero-links"><a class="primary-link" href="posts/agent-engineering.html">系统设计地图 <span>↗</span></a><a href="#library" class="quiet-link">浏览研究笔记 →</a></div>
-</div><div class="hero-note"><span class="mono">EVIDENCE CHECKED</span><strong>2026-10-13</strong><p>机制 · 实现取舍 · 评估证据<br>适用条件 · 局限</p><div class="note-rule"></div><span class="note-label">一手论文与公开实现<br>作者结果与工程推导分开标注</span></div></div>
+</div><div class="hero-note"><span class="mono">EVIDENCE CHECKED</span><strong>2026-10-14</strong><p>机制 · 实现取舍 · 评估证据<br>适用条件 · 局限</p><div class="note-rule"></div><span class="note-label">一手论文与公开实现<br>作者结果与工程推导分开标注</span></div></div>
 <div class="edition-row"><span><i class="status-dot"></i> 10 篇工程与研究笔记</span><span>一手来源 · 技术分类 · 离线全文搜索</span><span class="learning-status" aria-live="polite">学习进度 0 / 10</span></div>
 </header>
-<section class="frontier-strip" aria-label="研究更新"><span class="rail-label">研究更新</span><p><strong>Agent Teams：协作收益由任务依赖和验证决定。</strong> 新增团队协作深度专题与三种 Team agent 选型对照：研究机制、业务工作流、跨 CLI 控制面，以及它们各自的证据边界。论文版本、核查日和未复跑项在正文注明。</p></section>
+<section class="frontier-strip" aria-label="研究更新"><span class="rail-label">研究更新</span><p><strong>工具系统：模型开放之后，仍要核对运行时合同。</strong> 更新 Argon API 的可用性、持续生成与恢复边界，补充 ADK Python 2.12.0 的工具结果检查和节点确认；团队协作专题继续提供等预算评测与选型入口。来源日期、核查日和未实测项在正文注明。</p></section>
 <section id="directions" class="library-section">
 <div class="section-heading"><div><span class="section-index">01 / RESEARCH DIRECTIONS</span><h2>先选一个技术问题。</h2></div><span>五个方向</span></div>
 <div class="direction-grid"><a class="direction-card" href="posts/openai.html" data-choose-topic="运行时与状态"><span class="mono">01</span><h3>运行时与状态</h3><p>循环、事件日志、检查点与故障恢复</p><small>2 篇笔记 →</small></a>
@@ -61,7 +61,7 @@
 <div class="card-body"><div class="card-meta">运行时与状态<span>约 19 分钟</span></div><h3>长任务状态：事件日志、压缩与崩溃恢复</h3><p>区分权威事件、模型工作集与产物状态，定位外部副作用的不确定区间，设计恢复与压缩验证。</p><div class="tag-row"><span class="tag">事件日志</span><span class="tag">恢复</span><span class="tag">Compaction</span><span class="tag">Anthropic</span></div><div class="card-footer"><time datetime="2026-10-13">2026-10-13</time><span class="arrow">→</span></div></div></a>
 <a class="card" href="posts/gemini.html" data-topic="工具与协议" data-slug="gemini">
 <div class="thumb"><span class="card-number">03</span><span class="learned-badge" hidden>已学习 ✓</span><svg viewBox="0 0 300 110" aria-hidden="true"><rect class="node" x="34" y="20" width="230" height="68" rx="9"/><path class="edge" d="M34 42h230"/><circle class="dot" cx="48" cy="31" r="3"/><circle class="dot" cx="60" cy="31" r="3"/><rect class="accent-node" x="50" y="54" width="55" height="20" rx="4"/><path class="edge" d="M118 56h126m-126 14h88"/></svg></div>
-<div class="card-body"><div class="card-meta">工具与协议<span>约 18 分钟</span></div><h3>工具系统：调度、能力发现与跨 Agent 协议</h3><p>把工具目录、授权、调度和结果处理分层，比较 MCP、Skills 与 A2A 的接口及它们不能保证的语义。</p><div class="tag-row"><span class="tag">MCP</span><span class="tag">A2A</span><span class="tag">调度器</span><span class="tag">Google</span></div><div class="card-footer"><time datetime="2026-10-13">2026-10-13</time><span class="arrow">→</span></div></div></a>
+<div class="card-body"><div class="card-meta">工具与协议<span>约 23 分钟</span></div><h3>工具系统：调度、能力发现与跨 Agent 协议</h3><p>把工具目录、授权、调度和结果处理分层，以 Argon 持续生成与 ADK 工具检查、节点审批说明运行时合同。</p><div class="tag-row"><span class="tag">MCP</span><span class="tag">A2A</span><span class="tag">调度器</span><span class="tag">Google</span></div><div class="card-footer"><time datetime="2026-10-14">2026-10-14</time><span class="arrow">→</span></div></div></a>
 <a class="card" href="posts/muse.html" data-topic="权限与安全" data-slug="muse">
 <div class="thumb"><span class="card-number">04</span><span class="learned-badge" hidden>已学习 ✓</span><svg viewBox="0 0 300 110" aria-hidden="true"><rect class="node" x="24" y="25" width="64" height="35" rx="7"/><path class="edge" d="M88 42h28m64 0h28"/><rect class="accent-node" x="116" y="25" width="64" height="35" rx="7"/><rect class="node" x="208" y="25" width="64" height="35" rx="7"/><path class="edge" d="M148 60v22H56V60"/></svg></div>
 <div class="card-body"><div class="card-meta">权限与安全<span>约 15 分钟</span></div><h3>行动边界：身份、凭据与持久记忆的信任</h3><p>拆分用户身份、执行权限和证据信任，比较 VM、凭据代理与出网控制，检查跨任务记忆的权限传播。</p><div class="tag-row"><span class="tag">身份</span><span class="tag">凭据隔离</span><span class="tag">记忆来源</span><span class="tag">Meta</span></div><div class="card-footer"><time datetime="2026-10-13">2026-10-13</time><span class="arrow">→</span></div></div></a>
@@ -82,9 +82,9 @@
 <div class="path-card"><span>04</span><h3>建立评测证据</h3><p>固定任务、预算、环境与 grader，检查完整交付。</p><a href="posts/agent-evaluation.html">长任务评测 →</a></div>
 </div>
 </section>
-<section class="about-section"><div><span class="section-index">04 / EVIDENCE POLICY</span><h2>让机制可以检查，<br>让结论具有边界。</h2></div><div><p>文章区分一手披露、公开实现、作者实验与工程推导。厂商是案例来源；主分类按技术问题组织。不同任务、模型、Harness 或资源配置的分数不拼成统一排名。</p><p>资料核查日为 2026-10-13。近期研究与基础材料分别注明日期和版本，未执行的训练、模型请求和实验不标记为已复现。源文、网页和离线搜索索引随 Git 一起维护。</p><a href="MAINTAINING.md">阅读维护与证据约定 ↗</a></div></section>
+<section class="about-section"><div><span class="section-index">04 / EVIDENCE POLICY</span><h2>让机制可以检查，<br>让结论具有边界。</h2></div><div><p>文章区分一手披露、公开实现、作者实验与工程推导。厂商是案例来源；主分类按技术问题组织。不同任务、模型、Harness 或资源配置的分数不拼成统一排名。</p><p>资料核查日为 2026-10-14。近期研究与基础材料分别注明日期和版本，未执行的训练、模型请求和实验不标记为已复现。源文、网页和离线搜索索引随 Git 一起维护。</p><a href="MAINTAINING.md">阅读维护与证据约定 ↗</a></div></section>
 </main>
-<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-13 · 正文与来源随 Git 维护</span></footer>
+<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-14 · 正文与来源随 Git 维护</span></footer>
 </div>
 </body>
 </html>
