@@ -25,7 +25,7 @@
 <div class="eyebrow">FIELDNOTE 08 / 评测与交付</div>
 <h1><span class="title-line">长任务评测：</span><span class="title-line">产物、轨迹与基础设施噪声</span></h1>
 <p class="lede">从 AgencyBench、AgentLAB 与 METR 的评测口径出发，区分交付质量、可靠性、安全和环境造成的分数差异。</p>
-<div class="article-meta"><time datetime="2026-10-13">2026-10-13</time><span>约 17 分钟</span><a href="../content/08-agent-evaluation.md" download>Markdown 源文 ↗</a></div>
+<div class="article-meta"><time datetime="2026-10-15">2026-10-15</time><span>约 17 分钟</span><a href="../content/08-agent-evaluation.md" download>Markdown 源文 ↗</a></div>
 <div class="tag-row"><span class="tag">AgencyBench</span><span class="tag">AgentLAB</span><span class="tag">METR</span><span class="tag">可靠性</span></div>
 </header>
 <div class="article-layout">
@@ -36,13 +36,14 @@
 <li><a href="#section-4">排行榜差距未必来自模型</a></li>
 <li><a href="#section-5">AgentLAB：安全需要检查整条轨迹</a></li>
 <li><a href="#section-6">最小复现记录与判分合同</a></li>
+<li><a href="#h-9a11bf9073a3">生产 trace 进入评测前先说明缺失机制</a></li>
 <li><a href="#section-7">更新记录与证据边界</a></li>
 <li><a href="#sources">来源与证据说明</a></li>
 </ul></div>
 <button class="complete-button" type="button" data-slug="agent-evaluation" aria-pressed="false">标记已学习</button><button class="print-button" type="button">打印 / 保存 PDF</button></aside>
 <article class="prose"><h2 id="section-1">评测对象是一个完整系统</h2>
 <p>专业 Agent 评测至少固定模型版本、推理预算、Harness、工具、任务集、资源和 grader。最终文字、生成产物、环境状态和行动轨迹是不同观察面。一次演示能证明某条轨迹成功，不能说明换一个 seed、资源配置或任务顺序后的可靠性。</p>
-<p>本篇资料核查日为 <strong>2026-10-13</strong>。选用 2026 年已经发布的评测研究与方法材料，保留原始版本；没有将历史实验中的模型顺序写成 10 月产品排名，也没有复跑下面的分数。</p>
+<p>下列评测研究与方法材料的核查日为 <strong>2026-10-13</strong>。选用 2026 年已经发布的材料，保留原始版本；没有将历史实验中的模型顺序写成 10 月产品排名，也没有复跑下面的分数。</p>
 <h2 id="section-2">AgencyBench：把交付要求落实到 grader</h2>
 <p>AgencyBench v4 包含 6 类能力、32 个真实场景和 138 个任务，每项明确 queries、deliverables 与 rubrics。它用用户模拟 Agent 提供迭代反馈，在独立工作区生成产物，再同步到 Docker 环境执行和渲染，最后在 eval-space 进行规则或模型判分。论文所述约 90 次工具调用、约 1M tokens 是场景执行的统计描述，不是模型上下文窗口要求。<sup><a href="#cite-1">[1]</a></sup></p>
 <p><strong>实现取舍（工程推导）</strong>：执行者与验收环境分离能减少对自述完成状态的依赖，却引入环境同步、截图和 grader 版本等新变量。每次同步应记录产物哈希；功能检查和视觉 rubric 分开报告；失败时保留执行日志，区分代码不正确、服务未启动、渲染超时和 judge 不确定。用户模拟器也需要版本化，因为不同反馈可能改变任务难度。</p>
@@ -80,8 +81,13 @@
 }
 </code></pre>
 <p>对“技术资料研究 Agent”，判分合同可以是：引用确实支持结论；来源在截止日前发布；用户修正得到应用；产物可打开；外部副作用遵守授权。评分脚本检查可机械验证的部分，人工或模型 rubric 处理语义，争议样本保留原始证据。加入<a href="agent-memory.html">记忆策略</a>前，先建立这个基线，才能知道收益来自检索、训练还是更宽的预算。</p>
+<h2 id="h-9a11bf9073a3">生产 trace 进入评测前先说明缺失机制</h2>
+<p>原生 tracing 降低了收集生产轨迹的成本，但送达的 trace 仍是带有观察条件的样本。以 <a href="claude.html">Claude Platform 的 OpenTelemetry</a> 为例，先核对它实际覆盖的客户端 / API 路径、sampling、交付和内容限制，再决定是否足以重建一个 trial。不能只用送达的 traces 推断所有运行的成功率或安全性。</p>
+<p><strong>工程建议（未执行）</strong>：在复现记录中补充导出覆盖范围、去重键、内容模式、截断标记、脱敏策略，以及 SDK、span schema、exporter 与 grader 版本；用请求 ID 将 trial、轨迹和产物关联。缺少关键证据的 trial 保留 <code>unknown</code>，不把“没有违规 span”计为安全通过，也不把缺失内容补成模型未采取行动。</p>
+<p>用独立请求记录或用量数据校验覆盖，并分别报告全部 trial 数、观测到的 trial 数与证据充分的 trial 数。检查丢失是否集中在超时、异常或长输出等条件，避免只保留容易送达和判分的样本；这些分母与过滤规则应随结果发布。本次没有运行 exporter 或新的模型评测。</p>
 <h2 id="section-7">更新记录与证据边界</h2>
 <ul>
+<li>2026-10-15：新增生产 trace 进入评测前的覆盖、去重、截断、脱敏、版本和缺失机制检查；链接运行时篇的一手文档核查，未运行 exporter 或相关评测，原研究日期不变。</li>
 <li>2026-10-13：新增长任务交付、重复运行、基础设施干扰、时间跨度和长轨迹安全的评测合同。</li>
 <li>AgencyBench 使用 2026-04-23 v4；AgentLAB 使用 2026-02-18 v1；没有混用后续榜单。</li>
 <li>作者统计均注明实验对象；本文的复现 schema 与测试清单是工程建议，未运行模型或 benchmark。</li>
@@ -103,7 +109,7 @@
 </div>
 <a class="next-article" href="agent-teams.html"><small>继续阅读 →</small><strong>Agent Teams：协作拓扑、状态边界与等预算评测</strong></a>
 </main>
-<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-13 · 正文与来源随 Git 维护</span></footer>
+<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-15 · 正文与来源随 Git 维护</span></footer>
 </div>
 </body>
 </html>

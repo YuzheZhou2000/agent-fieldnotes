@@ -25,7 +25,7 @@
 <div class="eyebrow">FIELDNOTE 02 / 运行时与状态</div>
 <h1><span class="title-line">长任务状态：</span><span class="title-line">事件日志、压缩与崩溃恢复</span></h1>
 <p class="lede">区分权威事件、模型工作集与产物状态，定位外部副作用的不确定区间，设计恢复与压缩验证。</p>
-<div class="article-meta"><time datetime="2026-10-13">2026-10-13</time><span>约 19 分钟</span><a href="../content/02-claude.md" download>Markdown 源文 ↗</a></div>
+<div class="article-meta"><time datetime="2026-10-15">2026-10-15</time><span>约 21 分钟</span><a href="../content/02-claude.md" download>Markdown 源文 ↗</a></div>
 <div class="tag-row"><span class="tag">事件日志</span><span class="tag">恢复</span><span class="tag">Compaction</span><span class="tag">Anthropic</span></div>
 </header>
 <div class="article-layout">
@@ -33,6 +33,7 @@
 <li><a href="#h-0ad8f29f4030">三种状态需要分别维护</a></li>
 <li><a href="#h-dfa9511d9615">最危险的恢复点在副作用之后</a></li>
 <li><a href="#h-1655d59a2c47">压缩应测保真度与决策影响</a></li>
+<li><a href="#h-d566a23bdce4">OpenTelemetry：诊断轨迹与权威状态分开</a></li>
 <li><a href="#_1">最新状态与近期变化</a></li>
 <li><a href="#claude-codeagent-sdk-managed-agents">Claude Code、Agent SDK 与 Managed Agents</a></li>
 <li><a href="#managed-agents">Managed Agents 的三个稳定接口</a><ul>
@@ -84,6 +85,34 @@
 <h2 id="h-1655d59a2c47">压缩应测保真度与决策影响</h2>
 <p>摘要 token 更少可能节约成本，也可能遗失否定约束、失败原因或用户最新纠正。应记录摘要引用的事件区间，允许回查证据，并在固定剩余预算下比较压缩前后行动。一次问答正确只能测恢复了某个事实，还要检查是否重复失败尝试、沿用旧目标或把未经验证的推测写成结论。</p>
 <p>适用条件是存在可追溯日志、可查询产物和明确操作键。短暂只读问答可从简单会话开始，跨进程长任务应验证持久存储与故障恢复。新的记忆策略另见<a href="agent-memory.html">文件记忆与异构路由</a>；下面用 Anthropic 的公开机制与产品快照继续分析具体实现。</p>
+<h2 id="h-d566a23bdce4">OpenTelemetry：诊断轨迹与权威状态分开</h2>
+<p>Anthropic 于 <strong>2026-10-14</strong> 宣布 Claude Platform 的 OpenTelemetry traces 进入 public beta，覆盖 Messages API、Managed Agents 与 Claude Client SDK。以下为 <strong>2026-10-15</strong> 的文档核查，未配置 exporter 或运行模型请求；不能把这项能力混作 Claude Code / Agent SDK 各自的监控接口。<sup><a href="#cite-13">[13]</a></sup><sup><a href="#cite-14">[14]</a></sup></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>轨迹来源</th>
+<th>主要观察范围</th>
+<th>集成边界</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SDK spans</td>
+<td>客户端请求、tool runner 执行的工具</td>
+<td>在应用中注册 tracer provider，由 exporter 导出</td>
+</tr>
+<tr>
+<td>API spans</td>
+<td>请求内部的 model runs、服务端工具、Managed Agents turns</td>
+<td>在 Console 配置 destination；AWS 的 API spans 仍是独立 traces</td>
+</tr>
+</tbody>
+</table></div>
+<p>这两种来源可补全不同层次的观察，不能因名称相同就把 SDK 与 API span 当重复调用。SDK 要在需追踪的首次请求前注册 provider；beta 期间 options 与 span schema 可能破坏兼容，应固定 SDK 版本并对导出查询做回归。<sup><a href="#cite-14">[14]</a></sup><sup><a href="#cite-16">[16]</a></sup></p>
+<p>默认 <strong>Metadata only</strong> 记录标识、时序、状态和用量等元数据，也可能包含自己设置的工具名称与描述。<strong>Full content</strong> 可以带入提示与响应，但仍可能被截断；应检查 <code>anthropic.content.truncated</code>。目的平台有独立的访问与保留设置，启用导出不能沿用对原 API 存储范围的假设。<sup><a href="#cite-14">[14]</a></sup></p>
+<p>API 交付为 best effort，span 可能丢失，也可能重复送达；按 <strong>trace ID + span ID</strong> 去重。在支持 W3C <code>traceparent</code> 的请求中，关闭 sampled flag 可以不产生 API spans；Claude Platform on AWS 暂不支持该 header，不能套用同一传播规则。没有 trace 不等于没有调用。<sup><a href="#cite-15">[15]</a></sup></p>
+<p><strong>工程推导</strong>：诊断轨迹不能充当完整计费账本或安全审计记录。用 Usage API 对账用量，权威事件日志与外部产物继续分别核验；证据缺失时保留 unknown，不能从未观察到的 span 推断行动没有发生。官方总览也要求使用 Usage API 检查未产生 spans 的请求用量。<sup><a href="#cite-14">[14]</a></sup></p>
+<p><strong>练习建议（未执行）</strong>：在隔离、脱敏的工具循环中，分别构造截断、丢失和重复交付；检查去重后能否关联请求、工具与产物，无法判断的结果标为 unknown。记录内容模式、SDK / schema 版本与导出覆盖，再进入<a href="agent-evaluation.html">长任务评测</a>，避免只用已送达的 traces 代表所有试验。</p>
 <h2 id="_1">最新状态与近期变化</h2>
 <p>Claude 5.5 家族分三次发布：Opus 5.5 于 <strong>9 月 22 日</strong>、Sonnet 5.5 于 <strong>9 月 28 日</strong>、Haiku 5.5 于 <strong>10 月 7 日</strong>。官方分别强调复杂判断、日常明确任务、高并发低成本任务。Haiku 发布稿同时宣布 Sonnet 缓存读取降价，并推出 Python / TypeScript 客户端 SDK 的浏览器与 Computer use toolset beta。<sup><a href="#cite-1">[1]</a></sup><sup><a href="#cite-2">[2]</a></sup><sup><a href="#cite-3">[3]</a></sup></p>
 <div class="table-wrap"><table>
@@ -293,6 +322,9 @@ asyncio.run(main())
 <h2 id="_4">更新记录与证据边界</h2>
 <ul>
 <li>
+<p>2026-10-15：核查 10 月 14 日 OpenTelemetry public beta 与当前 SDK / API 文档，补充轨迹覆盖、截断、交付与权威状态的边界；未运行 exporter、模型调用或相关评测。</p>
+</li>
+<li>
 <p>2026-10-13：补充状态权威范围、副作用确认空档和压缩保真度测试；保留旧 URL 与学习进度。新增恢复方案为工程推导，未执行故障注入。</p>
 </li>
 <li>
@@ -323,13 +355,17 @@ asyncio.run(main())
 <li id="cite-10"><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/browser-use-sdk" target="_blank" rel="noopener noreferrer">Browser and computer use with the SDK toolsets</a><span class="source-meta">滚动官方文档 · 2026-10-13 读取 · 不提供内置 browser / desktop backend</span></li>
 <li id="cite-11"><a href="https://code.claude.com/docs/en/sub-agents" target="_blank" rel="noopener noreferrer">Claude Code · Create custom subagents</a><span class="source-meta">滚动官方文档 · 2026-10-13 读取 · 不同并行机制有独立语义</span></li>
 <li id="cite-12"><a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents" target="_blank" rel="noopener noreferrer">Demystifying evals for AI agents</a><span class="source-meta">2026-01-09 · 官方评测工程博客已读取</span></li>
+<li id="cite-13"><a href="https://claude.com/resources/articles/agent-observability-on-the-claude-platform" target="_blank" rel="noopener noreferrer">Anthropic · Agent observability on the Claude Platform</a><span class="source-meta">2026-10-14 发布 · 2026-10-15 核查 public beta 与覆盖产品 · 未接入观测平台</span></li>
+<li id="cite-14"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry" target="_blank" rel="noopener noreferrer">Claude Platform · OpenTelemetry 总览</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 SDK / API 范围、内容模式、截断、用量与保留边界 · 未实测</span></li>
+<li id="cite-15"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry/api" target="_blank" rel="noopener noreferrer">Claude Platform · API spans</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 best-effort / 重复交付、traceparent、sampling 与 AWS 例外 · 未配置 destination</span></li>
+<li id="cite-16"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry/sdk" target="_blank" rel="noopener noreferrer">Claude Platform · SDK spans</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 tracer provider / exporter、客户端工具与 beta schema 兼容性 · 未安装或运行示例</span></li>
 </ol>
 </div></footer>
 </article>
 </div>
 <a class="next-article" href="gemini.html"><small>继续阅读 →</small><strong>工具系统：调度、能力发现与跨 Agent 协议</strong></a>
 </main>
-<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-13 · 正文与来源随 Git 维护</span></footer>
+<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-15 · 正文与来源随 Git 维护</span></footer>
 </div>
 </body>
 </html>

@@ -5,9 +5,9 @@
   "topic": "运行时与状态",
   "summary": "区分权威事件、模型工作集与产物状态，定位外部副作用的不确定区间，设计恢复与压缩验证。",
   "order": 2,
-  "updated": "2026-10-13",
+  "updated": "2026-10-15",
   "tags": ["事件日志", "恢复", "Compaction", "Anthropic"],
-  "minutes": 19
+  "minutes": 21
 }
 ---
 
@@ -34,6 +34,25 @@ Managed Agents 将 Session、Harness 和 Sandbox 分离，Session 保存 append-
 摘要 token 更少可能节约成本，也可能遗失否定约束、失败原因或用户最新纠正。应记录摘要引用的事件区间，允许回查证据，并在固定剩余预算下比较压缩前后行动。一次问答正确只能测恢复了某个事实，还要检查是否重复失败尝试、沿用旧目标或把未经验证的推测写成结论。
 
 适用条件是存在可追溯日志、可查询产物和明确操作键。短暂只读问答可从简单会话开始，跨进程长任务应验证持久存储与故障恢复。新的记忆策略另见[文件记忆与异构路由](agent-memory.html)；下面用 Anthropic 的公开机制与产品快照继续分析具体实现。
+
+## OpenTelemetry：诊断轨迹与权威状态分开
+
+Anthropic 于 **2026-10-14** 宣布 Claude Platform 的 OpenTelemetry traces 进入 public beta，覆盖 Messages API、Managed Agents 与 Claude Client SDK。以下为 **2026-10-15** 的文档核查，未配置 exporter 或运行模型请求；不能把这项能力混作 Claude Code / Agent SDK 各自的监控接口。<sup><a href="#cite-13">[13]</a></sup><sup><a href="#cite-14">[14]</a></sup>
+
+| 轨迹来源 | 主要观察范围 | 集成边界 |
+|---|---|---|
+| SDK spans | 客户端请求、tool runner 执行的工具 | 在应用中注册 tracer provider，由 exporter 导出 |
+| API spans | 请求内部的 model runs、服务端工具、Managed Agents turns | 在 Console 配置 destination；AWS 的 API spans 仍是独立 traces |
+
+这两种来源可补全不同层次的观察，不能因名称相同就把 SDK 与 API span 当重复调用。SDK 要在需追踪的首次请求前注册 provider；beta 期间 options 与 span schema 可能破坏兼容，应固定 SDK 版本并对导出查询做回归。<sup><a href="#cite-14">[14]</a></sup><sup><a href="#cite-16">[16]</a></sup>
+
+默认 **Metadata only** 记录标识、时序、状态和用量等元数据，也可能包含自己设置的工具名称与描述。**Full content** 可以带入提示与响应，但仍可能被截断；应检查 `anthropic.content.truncated`。目的平台有独立的访问与保留设置，启用导出不能沿用对原 API 存储范围的假设。<sup><a href="#cite-14">[14]</a></sup>
+
+API 交付为 best effort，span 可能丢失，也可能重复送达；按 **trace ID + span ID** 去重。在支持 W3C `traceparent` 的请求中，关闭 sampled flag 可以不产生 API spans；Claude Platform on AWS 暂不支持该 header，不能套用同一传播规则。没有 trace 不等于没有调用。<sup><a href="#cite-15">[15]</a></sup>
+
+**工程推导**：诊断轨迹不能充当完整计费账本或安全审计记录。用 Usage API 对账用量，权威事件日志与外部产物继续分别核验；证据缺失时保留 unknown，不能从未观察到的 span 推断行动没有发生。官方总览也要求使用 Usage API 检查未产生 spans 的请求用量。<sup><a href="#cite-14">[14]</a></sup>
+
+**练习建议（未执行）**：在隔离、脱敏的工具循环中，分别构造截断、丢失和重复交付；检查去重后能否关联请求、工具与产物，无法判断的结果标为 unknown。记录内容模式、SDK / schema 版本与导出覆盖，再进入[长任务评测](agent-evaluation.html)，避免只用已送达的 traces 代表所有试验。
 
 ## 最新状态与近期变化
 
@@ -163,6 +182,7 @@ asyncio.run(main())
 
 ## 更新记录与证据边界
 
+- 2026-10-15：核查 10 月 14 日 OpenTelemetry public beta 与当前 SDK / API 文档，补充轨迹覆盖、截断、交付与权威状态的边界；未运行 exporter、模型调用或相关评测。
 - 2026-10-13：补充状态权威范围、副作用确认空档和压缩保真度测试；保留旧 URL 与学习进度。新增恢复方案为工程推导，未执行故障注入。
 
 - 2026-10-13：核实 Claude 5.5 发布、Sonnet 缓存价格更新、浏览器 SDK beta；串联 2025 基础博客与 2026 架构实践。
@@ -185,5 +205,9 @@ asyncio.run(main())
 <li id="cite-10"><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/browser-use-sdk">Browser and computer use with the SDK toolsets</a><span class="source-meta">滚动官方文档 · 2026-10-13 读取 · 不提供内置 browser / desktop backend</span></li>
 <li id="cite-11"><a href="https://code.claude.com/docs/en/sub-agents">Claude Code · Create custom subagents</a><span class="source-meta">滚动官方文档 · 2026-10-13 读取 · 不同并行机制有独立语义</span></li>
 <li id="cite-12"><a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Demystifying evals for AI agents</a><span class="source-meta">2026-01-09 · 官方评测工程博客已读取</span></li>
+<li id="cite-13"><a href="https://claude.com/resources/articles/agent-observability-on-the-claude-platform">Anthropic · Agent observability on the Claude Platform</a><span class="source-meta">2026-10-14 发布 · 2026-10-15 核查 public beta 与覆盖产品 · 未接入观测平台</span></li>
+<li id="cite-14"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry">Claude Platform · OpenTelemetry 总览</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 SDK / API 范围、内容模式、截断、用量与保留边界 · 未实测</span></li>
+<li id="cite-15"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry/api">Claude Platform · API spans</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 best-effort / 重复交付、traceparent、sampling 与 AWS 例外 · 未配置 destination</span></li>
+<li id="cite-16"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry/sdk">Claude Platform · SDK spans</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 tracer provider / exporter、客户端工具与 beta schema 兼容性 · 未安装或运行示例</span></li>
 </ol>
 </div></footer>

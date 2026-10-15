@@ -5,9 +5,9 @@
   "topic": "记忆与上下文",
   "summary": "比较 CAMG 与 MemAgent 的状态范围、训练对象和评测协议，设计能区分记住、检索与真正使用的实验。",
   "order": 7,
-  "updated": "2026-10-13",
+  "updated": "2026-10-15",
   "tags": ["CAMG", "MemAgent", "文件记忆", "路由"],
-  "minutes": 16
+  "minutes": 18
 }
 ---
 
@@ -15,7 +15,7 @@
 
 Agent 有文件或向量库，仍可能忘记关键约束：没有及时写入，检索了不相关经验，或检索正确却没有用于下一步行动。2026 年 9 月的两项研究把问题推进到策略层：CAMG-RL 学习任务执行者怎样维护文件；MemAgent 学习独立记忆管理者怎样选择提供者、注入工作记忆和写回经验。二者优化的对象不同，不能简单比较成功率。<sup><a href="#cite-1">[1]</a></sup><sup><a href="#cite-3">[3]</a></sup>
 
-本篇核查日为 **2026-10-13**。CAMG 使用 9 月 30 日 v2，MemAgent 使用 9 月 26 日 v1；均为近期预印本。下面先给机制与作者实验，再给明确标注的工程推导。本博客没有训练模型或复跑论文分数。
+下列两项论文的核查日为 **2026-10-13**。CAMG 使用 9 月 30 日 v2，MemAgent 使用 9 月 26 日 v1；均为近期预印本。下面先给机制与作者实验，再给明确标注的工程推导。本博客没有训练模型或复跑论文分数。
 
 ## CAMG：沿任务奖励学习文件记忆
 
@@ -47,6 +47,20 @@ GAIA 的额外路由延迟约 1.2 秒/任务，占平均任务时间不到 0.3%�
 
 以上机制和限制来自两篇论文。**组合方案属于工程假设**：可在任务内保留文件工作状态，在任务间路由经过验收的经验，但应先分别测量收益；增加第二套记忆会引入冲突、过时内容和写回成本。不能把两篇不同协议的分数拼成统一排名。<sup><a href="#cite-1">[1]</a></sup><sup><a href="#cite-3">[3]</a></sup>
 
+## Checkpoint 保留：可继续运行不等于可历史回放
+
+`langgraph-checkpoint-postgres` **3.2.0 于 2026-10-14 发布**，为 `PostgresSaver` / `AsyncPostgresSaver` 实现 `prune` / `aprune`。以下为 **2026-10-15** 的发行说明与固定源码核查，未安装或运行数据库。<sup><a href="#cite-5">[5]</a></sup>
+
+`delete` 在一个事务中删除给定线程的 checkpoints、writes 与 blobs；`keep_latest` 保留各 namespace 最新 checkpoint、pending writes 及其引用 blobs，删除旧历史。子图 namespace 还遵循调用与持久子图的不同生命周期，不能只按线程中最大的 checkpoint ID 理解保留结果。<sup><a href="#cite-6">[6]</a></sup>
+
+`keep_latest` 按线程使用快照事务，允许同时 append 新 checkpoint；从正被裁剪的 checkpoint fork / replay 则不安全。同线程并发 prune 可能需要重试；这种逐线程提交的批处理可能部分成功，异常不代表整批回滚。<sup><a href="#cite-6">[6]</a></sup>
+
+`keep_latest` 会拒绝检测到的 `DeltaChannel` 线程，因为它重建当前值仍需旧历史。但 Python **<1.2.13** 或 JS **<1.5.0** 的部分旧写入可能逃过检测；未触发拒绝不证明历史依赖一定可安全删除。<sup><a href="#cite-6">[6]</a></sup>
+
+**工程推论**：保留策略是恢复合同的一部分。最新状态能继续运行，不代表评测还能回到同一历史点分叉；运行线程与评测快照应分开管理，保存所需 checkpoint、引用数据及版本，不能只留下一个已失效的 ID。
+
+**隔离数据库验证建议（未执行）**：构造父子 namespace、pending writes 与 `DeltaChannel` 线程，检查两种策略后的最新状态和历史；分别模拟并发 append、并发 prune、旧 checkpoint 分叉和批次中段失败。按线程确认已提交与未完成的裁剪，不从单个异常推断所有记录均已恢复。
+
 ## 一个可以证伪的评估方案
 
 以下为建议实验，**未执行**。选固定版本的修复任务或资料研究任务，冻结模型、工具、资源和预算，分别比较无记忆、固定文件笔记、单提供者、路由方案。先划分任务再生成探索记忆，避免测试答案进入初始化池；在线学习另设协议，不与冻结池混算。
@@ -61,6 +75,7 @@ GAIA 的额外路由延迟约 1.2 秒/任务，占平均任务时间不到 0.3%�
 
 ## 更新记录与证据边界
 
+- 2026-10-15：核查 10 月 14 日 checkpoint-postgres 3.2.0 与 PR #9290，补充裁剪、历史回放、并发和 DeltaChannel 检测边界；隔离数据库验证方案未执行，旧论文核查日期保持不变。
 - 2026-10-13：新增两项 9 月记忆研究的机制、实验口径和工程评估设计。
 - CAMG 作者项目页仍写“Code release: preparing the public snapshot”；没有将其标记为代码已复现。
 - MemAgent README 快照固定为 `7121cfe991c329748cd610515a3419cabc875ba6`；本次未逐文件审计或训练。
@@ -73,5 +88,7 @@ GAIA 的额外路由延迟约 1.2 秒/任务，占平均任务时间不到 0.3%�
 <li id="cite-2"><a href="https://liruiluo.github.io/agentmemorygym/">CAMG-RL · 作者项目页</a><span class="source-meta">随论文发布，无独立页面发布日期 · 2026-10-13 核查结果、128-task panel 与代码发布状态</span></li>
 <li id="cite-3"><a href="https://arxiv.org/html/2609.32521v1">Wei 等 · MemAgent，v1</a><span class="source-meta">2026-09-26 · 2026-10-13 核查方法、表 1、表 5、初始化协议和附录提供者成本 · 未复跑</span></li>
 <li id="cite-4"><a href="https://github.com/WalkerWorldPeace/MemAgent/blob/7121cfe991c329748cd610515a3419cabc875ba6/README.md">MemAgent · 作者实现 README 固定快照</a><span class="source-meta">提交日期 2026-09-25 · 2026-10-13 核查数据准备、探索、训练和评测入口 · 未执行</span></li>
+<li id="cite-5"><a href="https://github.com/langchain-ai/langgraph/releases/tag/checkpointpostgres%3D%3D3.2.0">LangGraph · langgraph-checkpoint-postgres 3.2.0</a><span class="source-meta">2026-10-14 发布 · 2026-10-15 核查发行说明与 prune / aprune 范围 · 未安装运行</span></li>
+<li id="cite-6"><a href="https://github.com/langchain-ai/langgraph/pull/9290">LangGraph · Postgres checkpoint prune，PR #9290</a><span class="source-meta">2026-10-14 合入 · 2026-10-15 核查策略、并发与旧 DeltaChannel 写入限制，交叉读 <a href="https://github.com/langchain-ai/langgraph/tree/36bf3887f074f2b05f42409c8a67e3a33ed1d1ba/libs/checkpoint-postgres/langgraph/checkpoint/postgres">36bf3887 固定源码</a>的 sync / async / base 路径 · 未复跑数据库测试</span></li>
 </ol>
 </div></footer>
