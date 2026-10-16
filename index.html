@@ -26,7 +26,7 @@
 <h1><span class="title-line">设计可验证的</span><span class="title-line"><em>Agent</em> 系统。</span></h1>
 <p class="hero-intro">面向专业 Agent 工程师。从技术问题进入研究：拆解机制与接口，比较实现取舍，用可追溯的证据检验适用条件。</p>
 <div class="hero-links"><a class="primary-link" href="posts/agent-engineering.html">系统设计地图 <span>↗</span></a><a href="#library" class="quiet-link">浏览研究笔记 →</a></div>
-</div><div class="hero-note"><span class="mono">EVIDENCE CHECKED</span><strong>2026-10-15</strong><p>机制 · 实现取舍 · 评估证据<br>适用条件 · 局限</p><div class="note-rule"></div><span class="note-label">一手论文与公开实现<br>作者结果与工程推导分开标注</span></div></div>
+</div><div class="hero-note"><span class="mono">EVIDENCE CHECKED</span><strong>2026-10-16</strong><p>机制 · 实现取舍 · 评估证据<br>适用条件 · 局限</p><div class="note-rule"></div><span class="note-label">一手论文与公开实现<br>作者结果与工程推导分开标注</span></div></div>
 <div class="edition-row"><span><i class="status-dot"></i> 11 篇工程与研究笔记</span><span>一手来源 · 技术分类 · 离线全文搜索</span><span class="learning-status" aria-live="polite">学习进度 0 / 11</span></div>
 </header>
 <section class="frontier-strip" aria-label="研究更新"><span class="rail-label">研究更新</span><p><strong>工具系统：模型开放之后，仍要核对运行时合同。</strong> 更新 Argon API 的可用性、持续生成与恢复边界，补充 ADK Python 2.12.0 的工具结果检查和节点确认；团队协作专题继续提供等预算评测与选型入口。来源日期、核查日和未实测项在正文注明。</p></section>
@@ -58,7 +58,7 @@
 <div class="card-body"><div class="card-meta">评测与交付<span>约 95 分钟</span></div><h3>Agent 工程面试准备：Qoder、WorkBuddy 与工程题库</h3><p>从公开面经与官方岗位出发，整理 50 道核心题、4 道系统设计题、8 道编程练习，以及项目复盘、模拟面试和四周准备计划。</p><div class="tag-row"><span class="tag">面试准备</span><span class="tag">Qoder</span><span class="tag">WorkBuddy</span><span class="tag">Harness</span><span class="tag">后端工程</span></div><div class="card-footer"><time datetime="2026-10-13">2026-10-13</time><span class="arrow">→</span></div></div></a>
 <a class="card" href="posts/openai.html" data-topic="运行时与状态" data-slug="openai">
 <div class="thumb"><span class="card-number">01</span><span class="learned-badge" hidden>已学习 ✓</span><svg viewBox="0 0 300 110" aria-hidden="true"><rect class="node" x="24" y="25" width="64" height="35" rx="7"/><path class="edge" d="M88 42h28m64 0h28"/><rect class="accent-node" x="116" y="25" width="64" height="35" rx="7"/><rect class="node" x="208" y="25" width="64" height="35" rx="7"/><path class="edge" d="M148 60v22H56V60"/></svg></div>
-<div class="card-body"><div class="card-meta">运行时与状态<span>约 16 分钟</span></div><h3>Agent 运行时：工具循环、Harness 与执行环境</h3><p>定义模型、调度器、会话与执行环境的接口合同，讨论取消、并发、资源隔离和故障归因。</p><div class="tag-row"><span class="tag">工具循环</span><span class="tag">Harness</span><span class="tag">OpenAI</span><span class="tag">Codex</span></div><div class="card-footer"><time datetime="2026-10-13">2026-10-13</time><span class="arrow">→</span></div></div></a>
+<div class="card-body"><div class="card-meta">运行时与状态<span>约 21 分钟</span></div><h3>Agent 运行时：工具循环、Harness 与执行环境</h3><p>定义模型、会话与执行环境的接口合同，以审批、压缩和持久化更新检验长任务恢复的边界。</p><div class="tag-row"><span class="tag">工具循环</span><span class="tag">Harness</span><span class="tag">OpenAI</span><span class="tag">Codex</span></div><div class="card-footer"><time datetime="2026-10-16">2026-10-16</time><span class="arrow">→</span></div></div></a>
 <a class="card" href="posts/claude.html" data-topic="运行时与状态" data-slug="claude">
 <div class="thumb"><span class="card-number">02</span><span class="learned-badge" hidden>已学习 ✓</span><svg viewBox="0 0 300 110" aria-hidden="true"><rect class="node" x="118" y="12" width="64" height="30" rx="6"/><path class="edge" d="M150 42v16M60 58h180M60 58v14m90-14v14m90-14v14"/><rect class="node" x="28" y="72" width="64" height="26" rx="6"/><rect class="accent-node" x="118" y="72" width="64" height="26" rx="6"/><rect class="node" x="208" y="72" width="64" height="26" rx="6"/></svg></div>
 <div class="card-body"><div class="card-meta">运行时与状态<span>约 21 分钟</span></div><h3>长任务状态：事件日志、压缩与崩溃恢复</h3><p>区分权威事件、模型工作集与产物状态，定位外部副作用的不确定区间，设计恢复与压缩验证。</p><div class="tag-row"><span class="tag">事件日志</span><span class="tag">恢复</span><span class="tag">Compaction</span><span class="tag">Anthropic</span></div><div class="card-footer"><time datetime="2026-10-15">2026-10-15</time><span class="arrow">→</span></div></div></a>
@@ -85,9 +85,9 @@
 <div class="path-card"><span>04</span><h3>建立评测证据</h3><p>固定任务、预算、环境与 grader，检查完整交付。</p><a href="posts/agent-evaluation.html">长任务评测 →</a></div>
 </div>
 </section>
-<section class="about-section"><div><span class="section-index">04 / EVIDENCE POLICY</span><h2>让机制可以检查，<br>让结论具有边界。</h2></div><div><p>文章区分一手披露、公开实现、作者实验与工程推导。厂商是案例来源；主分类按技术问题组织。不同任务、模型、Harness 或资源配置的分数不拼成统一排名。</p><p>资料核查日为 2026-10-15。近期研究与基础材料分别注明日期和版本，未执行的训练、模型请求和实验不标记为已复现。源文、网页和离线搜索索引随 Git 一起维护。</p><a href="MAINTAINING.md">阅读维护与证据约定 ↗</a></div></section>
+<section class="about-section"><div><span class="section-index">04 / EVIDENCE POLICY</span><h2>让机制可以检查，<br>让结论具有边界。</h2></div><div><p>文章区分一手披露、公开实现、作者实验与工程推导。厂商是案例来源；主分类按技术问题组织。不同任务、模型、Harness 或资源配置的分数不拼成统一排名。</p><p>资料核查日为 2026-10-16。近期研究与基础材料分别注明日期和版本，未执行的训练、模型请求和实验不标记为已复现。源文、网页和离线搜索索引随 Git 一起维护。</p><a href="MAINTAINING.md">阅读维护与证据约定 ↗</a></div></section>
 </main>
-<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-15 · 正文与来源随 Git 维护</span></footer>
+<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-16 · 正文与来源随 Git 维护</span></footer>
 </div>
 </body>
 </html>

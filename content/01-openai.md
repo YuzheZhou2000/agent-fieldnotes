@@ -3,11 +3,11 @@
   "slug": "openai",
   "title": "Agent 运行时：工具循环、Harness 与执行环境",
   "topic": "运行时与状态",
-  "summary": "定义模型、调度器、会话与执行环境的接口合同，讨论取消、并发、资源隔离和故障归因。",
+  "summary": "定义模型、会话与执行环境的接口合同，以审批、压缩和持久化更新检验长任务恢复的边界。",
   "order": 1,
-  "updated": "2026-10-13",
+  "updated": "2026-10-16",
   "tags": ["工具循环", "Harness", "OpenAI", "Codex"],
-  "minutes": 16
+  "minutes": 21
 }
 ---
 
@@ -63,6 +63,43 @@ OpenAI 在 2026 年 9 月 10 日发布 **Agents API 公测**，将 Codex 的 Har
 
 这是依据公开接口做的工程分类，并不意味着公开 CLI 的每一行代码都与云端服务完全相同。
 
+## Agents Python v0.24.0：压缩前保全待决状态
+
+OpenAI Agents Python **v0.24.0 于 2026-10-15 发布**，本节两项补丁均提交于 **10 月 13 日**；本文在 **10 月 16 日**读取发布说明、补丁与正式版本 `17d994bd3045dae71acda676a4ef4762ed8ecd94` 的相关源码和回归用例。以下证据属于应用内 SDK，不是托管 Agents API 的实现或服务保证；没有运行 SDK 测试、Redis 服务或模型实验。<sup><a href="#cite-8">[8]</a></sup><sup><a href="#cite-9">[9]</a></sup><sup><a href="#cite-10">[10]</a></sup>
+
+### 自动压缩等待调用与审批配对
+
+`OpenAIResponsesCompactionSession` 的自动压缩路径会检查候选历史中的工具 / program 分组。若移除孤立调用的检查会改变历史，说明分组尚不完整，当前路径直接推迟压缩；它不会为了生成摘要先丢掉待决调用。hosted MCP 审批另以 request ID 配对：`mcp_approval_request.id` 与响应中 `approval_request_id` 的集合不一致时也等待，不能只用普通工具的 call ID 检查代替。<sup><a href="#cite-9">[9]</a></sup>
+
+该补丁的回归用例覆盖 stream / nonstream、approve / reject，以及 `RunState` JSON 序列化后恢复。用例使用脚本模型与 mock compaction，断言待审批时不调用压缩接口、恢复后请求与结果仍成对进入模型和会话，后续合适回合才压缩。本次只阅读这些用例，未复跑；显式手动压缩也不能直接套用自动路径的保护条件。<sup><a href="#cite-9">[9]</a></sup>
+
+**工程推导**：上下文变短不是唯一目标，待决工具意图、审批决定与结果的关联也必须保全。推迟摘要不代表动作已经批准，更不证明动作未执行；恢复时仍需核对审批主体、目标参数与外部状态。权威事件和诊断轨迹的区别见[长任务状态](claude.html)。
+
+### Redis 原子替换不检测陈旧输入
+
+Redis 补丁为直接使用的 `RedisSession` 增加 `_atomic_replace_items`：先序列化输出，再在同一事务中替换旧历史，避免先 `clear_session()`、后 `add_items()` 之间应用进程退出留下空历史。它缩小的是持久化替换的故障区间，不能据此承诺 Redis 服务故障下的全部持久性或任意后端都有同样语义。<sup><a href="#cite-10">[10]</a></sup>
+
+固定实现明确 **不检查压缩输入是否陈旧**。事务提交仍可能来自另一写入者更新前读到的历史；同实例锁也不协调其他进程。实现只对直接 `RedisSession` 启用该替换 hook，默认继承该 hook 的子类会拒绝此快捷路径；外层包装也不能靠透明转发绕过自己的变换。工程上应单独设计每会话写入者协调，或在支持的存储合同中校验版本，不能把原子提交写成多 writer 一致性。<sup><a href="#cite-10">[10]</a></sup>
+
+| 边界 | 本次源码支持的改善 | 应用仍需验证 |
+|---|---|---|
+| 工具与审批历史 | 自动压缩等待未完整的调用 / 审批配对 | 决定由谁批准，真实动作是否完成 |
+| 压缩历史替换 | 支持路径中将删除与写入放在同一 Redis 事务 | 提交后取消、缓存失效、真实后端与包装语义 |
+| 多写入者 | 原子替换没有检查摘要输入的新鲜度 | 陈旧摘要能否覆盖新事件，版本校验或串行写入策略 |
+
+表中应用责任为工程推导，未部署验证。原子替换之后收到取消，也不证明事务没有提交；相关回归会再次加载已提交历史并检查恢复，而不会仅凭客户端异常推断旧历史仍有效。<sup><a href="#cite-10">[10]</a></sup>
+
+### 把恢复条件写进验收
+
+以下为建议实验，**未执行**。固定 SDK 版本、Agent 定义、session ID 与后端，在隔离环境中验证：
+
+1. 构造待审批工具与 hosted MCP 请求，分别批准和拒绝；检查压缩调用时点与历史配对，而不只看最终文字。
+2. 分别用流式与非流式执行，在中断点序列化、重启恢复；核对审批决定、工具结果和产物是否仍能关联。
+3. 在 Redis 替换前后注入取消或异常，用独立读取者观察历史；区别合法空结果、旧历史保留和新历史已提交，不把取消等同回滚。
+4. 让第二个写入者在读取历史后追加新事件，再提交旧输入产生的摘要；检查是否覆盖新工作，并验证应用的协调方案确实阻止该竞争。
+
+将配置、故障位置和真实后端结果纳入[长任务评测记录](agent-evaluation.html)。作者回归覆盖与本次独立实测必须分开记账。
+
 ## Agents API 的实现思路
 
 ### Harness 与 Sandbox 解耦
@@ -83,7 +120,7 @@ Agents API 支持主 Agent 分解任务、子 Agent 保持独立上下文，主 
 
 ## Codex 源码阅读路线
 
-本次实际读取的快照是 `openai/codex@b043762f9e3eb65dd5164ff5880f139bc6d084c7`。阅读链接固定到该 commit，避免主分支目录变化让笔记失效。没有编译整个 Codex，也没有运行付费模型任务。<sup><a href="#cite-6">[6]</a></sup>
+下述导读沿用 **2026-10-13** 读取的快照 `openai/codex@b043762f9e3eb65dd5164ff5880f139bc6d084c7`。阅读链接固定到该 commit，避免主分支目录变化让笔记失效。没有编译整个 Codex，也没有运行付费模型任务。<sup><a href="#cite-6">[6]</a></sup>
 
 | 阅读顺序 | 文件 / 关键符号 | 本次源码观察 | 带着什么问题读 |
 |---|---|---|---|
@@ -162,6 +199,8 @@ print(result.final_output)
 
 ## 更新记录与未验证项
 
+- 2026-10-16：核查 10 月 15 日 Agents Python v0.24.0 与两项 10 月 13 日补丁，补充自动压缩的待决审批保护、Redis 原子替换与多写入者边界；未运行 SDK 回归、数据库或模型实验。旧产品材料与 Codex 快照的核查日期不变。
+- 本次来源范围为官方 release、指定补丁和固定版本的相关源码；X 公开读取覆盖不完整，不将本篇描述为社交动态或 Agent 研究的全量核查。
 - 2026-10-13：以运行时接口组织正文，补充调度、取消与故障注入设计；保留 `openai.html` 与学习进度标识。新增合同为工程推导，未运行实验。
 
 - 2026-10-13：创建首版，核实 9 月发布与公开源码快照。
@@ -178,5 +217,8 @@ print(result.final_output)
 <li id="cite-5"><a href="https://github.com/openai/codex">OpenAI · Codex 公开仓库</a><span class="source-meta">README 已读取 · Apache-2.0 · CLI 与云产品边界需区分</span></li>
 <li id="cite-6"><a href="https://github.com/openai/codex/tree/b043762f9e3eb65dd5164ff5880f139bc6d084c7/codex-rs/core/src">Codex core/src · 本次源码快照</a><span class="source-meta">2026-10-13 拉取并读取 turn、router、tool_search、compact、context_window、rollout · 未编译</span></li>
 <li id="cite-7"><a href="https://openai.com/index/introducing-gpt-6-1-sol/">OpenAI · Introducing GPT-6.1 Sol</a><span class="source-meta">2026-09-29 · 官方定价与能力披露 · 未独立复测性能</span></li>
+<li id="cite-8"><a href="https://github.com/openai/openai-agents-python/releases/tag/v0.24.0">OpenAI Agents Python · v0.24.0</a><span class="source-meta">2026-10-15 02:20:12 UTC 发布，非 prerelease · 2026-10-16 核查 release 与 tag 对应 commit 17d994bd · 未安装或运行 SDK</span></li>
+<li id="cite-9"><a href="https://github.com/openai/openai-agents-python/commit/5eb47a5bdeab8ba9f6087de288c7e606816c76c6">Agents SDK · Defer automatic compaction for pending approvals</a><span class="source-meta">commit 2026-10-13，纳入 v0.24.0 · 2026-10-16 读取自动压缩分支与审批回归，交叉读 <a href="https://github.com/openai/openai-agents-python/blob/17d994bd3045dae71acda676a4ef4762ed8ecd94/src/agents/memory/openai_responses_compaction_session.py">正式版本固定源码</a>及 test_compaction_model_visibility.py · 未复跑</span></li>
+<li id="cite-10"><a href="https://github.com/openai/openai-agents-python/commit/f50525c8d7a77fd0935a01f27cb8231ed6e53670">Agents SDK · Replace Redis compaction history atomically</a><span class="source-meta">commit 2026-10-13，纳入 v0.24.0 · 2026-10-16 读取替换 hook、包装 / 子类边界及回归用例，交叉读 <a href="https://github.com/openai/openai-agents-python/blob/17d994bd3045dae71acda676a4ef4762ed8ecd94/src/agents/extensions/memory/redis_session.py">RedisSession 固定源码</a> · 未启动 Redis 或执行测试</span></li>
 </ol>
 </div></footer>
