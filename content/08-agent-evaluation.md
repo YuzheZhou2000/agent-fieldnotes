@@ -3,11 +3,11 @@
   "slug": "agent-evaluation",
   "title": "长任务评测：产物、轨迹与基础设施噪声",
   "topic": "评测与交付",
-  "summary": "从 AgencyBench、AgentLAB 与 METR 的评测口径出发，区分交付质量、可靠性、安全和环境造成的分数差异。",
+  "summary": "从 AgencyBench、AgentLAB、METR 与插件评测案例出发，区分交付质量、轨迹因果、可靠性及基础设施噪声。",
   "order": 8,
-  "updated": "2026-10-15",
+  "updated": "2026-10-19",
   "tags": ["AgencyBench", "AgentLAB", "METR", "可靠性"],
-  "minutes": 17
+  "minutes": 19
 }
 ---
 
@@ -15,7 +15,7 @@
 
 专业 Agent 评测至少固定模型版本、推理预算、Harness、工具、任务集、资源和 grader。最终文字、生成产物、环境状态和行动轨迹是不同观察面。一次演示能证明某条轨迹成功，不能说明换一个 seed、资源配置或任务顺序后的可靠性。
 
-下列评测研究与方法材料的核查日为 **2026-10-13**。选用 2026 年已经发布的材料，保留原始版本；没有将历史实验中的模型顺序写成 10 月产品排名，也没有复跑下面的分数。
+下列基础评测研究与方法材料的核查日为 **2026-10-13**；后续补充的生产 trace 与并行轨迹案例分别注明核查日期。选用 2026 年已经发布的材料，保留原始版本；没有将历史实验中的模型顺序写成 10 月产品排名，也没有复跑下面的分数。
 
 ## AgencyBench：把交付要求落实到 grader
 
@@ -84,8 +84,20 @@ AgentLAB 首发于 2026-02-18，覆盖 28 个环境、644 个案例，测试意�
 
 用独立请求记录或用量数据校验覆盖，并分别报告全部 trial 数、观测到的 trial 数与证据充分的 trial 数。检查丢失是否集中在超时、异常或长输出等条件，避免只保留容易送达和判分的样本；这些分母与过滤规则应随结果发布。本次没有运行 exporter 或新的模型评测。
 
+## 并行轨迹必须保留调用批次与依赖关系
+
+Google Cloud 于 **2026-10-16** 发布插件评测工程案例：一次 assistant turn 把 skill-loading 与两次文档搜索放进同一 `tool_calls` 批次并发派发；加载 skill 的首次调用只返回启动信息，完整指导在下一轮才进入上下文，因此搜索已经先于指导执行。把日志压成顺序列表，会掩盖这个依赖没有满足的问题。<sup><a href="#cite-8">[8]</a></sup>
+
+这属于作者报告的插件评测案例；文章未给该现象对应的固定 Harness 版本或修复提交。本文于 **2026-10-17** 读取正文，**2026-10-19** 复核，没有复现该任务，也不据此宣称所有 Skills 实现都有相同行为。
+
+**工程建议（未执行）**：除时间戳与 call ID 外，保存 assistant turn、dispatch batch、任务依赖和指导实际注入上下文的时刻。判分“先读取操作约束，再调用工具”时，检查后续行动是否真正发生在约束可用之后；日志中的显示顺序、工具的最终完成顺序和模型的最终总结都不足以单独证明这一点。
+
+可用同一任务比较“同批次派发”与“等待指导注入后再派发”，保持模型、预算、工具和 grader 不变，检查行动参数与最终产物。若前置调用失败或证据缺失，保留相应失败或 unknown，不把后续动作发生过就计为依赖满足。恢复后的任务和写入去重还需单独验证，见[运行时恢复案例](agent-engineering.html#h-63ca480a482b)。
+
 ## 更新记录与证据边界
 
+- 2026-10-19：复核新增 Google Cloud 案例及其发布日期、并发调用与指导注入机制；未运行对照实验，既有论文与生产 trace 文档核查日期不变。
+- 2026-10-17：依据 10 月 16 日 Google Cloud 插件评测案例，补充调用批次、指导注入与依赖关系的轨迹验收；对照实验为工程建议，未运行。
 - 2026-10-15：新增生产 trace 进入评测前的覆盖、去重、截断、脱敏、版本和缺失机制检查；链接运行时篇的一手文档核查，未运行 exporter 或相关评测，原研究日期不变。
 - 2026-10-13：新增长任务交付、重复运行、基础设施干扰、时间跨度和长轨迹安全的评测合同。
 - AgencyBench 使用 2026-04-23 v4；AgentLAB 使用 2026-02-18 v1；没有混用后续榜单。
@@ -102,5 +114,6 @@ AgentLAB 首发于 2026-02-18，覆盖 28 个环境、644 个案例，测试意�
 <li id="cite-5"><a href="https://metr.org/blog/2026-1-29-time-horizon-1-1/">METR · Time Horizon 1.1</a><span class="source-meta">2026-01-29 · 2026-10-13 核查任务扩充与长任务时间测量限制</span></li>
 <li id="cite-6"><a href="https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/">METR · Impact of modeling assumptions on time horizon results</a><span class="source-meta">2026-03-20 · 2026-10-13 核查正则化与结果敏感性 · 审阅较少的研究笔记</span></li>
 <li id="cite-7"><a href="https://arxiv.org/html/2602.16901v1">Jiang 等 · AgentLAB，v1</a><span class="source-meta">2026-02-18 · 2026-10-13 核查威胁分类、评测指标及表 3 · 未复跑</span></li>
+<li id="cite-8"><a href="https://cloud.google.com/blog/topics/developers-practitioners/four-eval-engineering-lessons">Google Cloud · Four evaluation engineering lessons learned from building agent plugins</a><span class="source-meta">2026-10-16 发布，未给日内时间 · 2026-10-17 读取全文，2026-10-19 复核并行 dispatch 与指导注入的因果案例 · 作者实践报告，未给固定 Harness 版本，未独立复现</span></li>
 </ol>
 </div></footer>

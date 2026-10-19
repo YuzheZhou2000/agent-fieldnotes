@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="从 AgencyBench、AgentLAB 与 METR 的评测口径出发，区分交付质量、可靠性、安全和环境造成的分数差异。">
+<meta name="description" content="从 AgencyBench、AgentLAB、METR 与插件评测案例出发，区分交付质量、轨迹因果、可靠性及基础设施噪声。">
 <title>长任务评测：产物、轨迹与基础设施噪声 · Agent Fieldnotes</title>
 <link rel="stylesheet" href="../assets/site.css">
 <script src="../assets/site.js" defer></script>
@@ -24,8 +24,8 @@
 <a class="back-link" href="../index.html#library">← 返回文章目录</a>
 <div class="eyebrow">FIELDNOTE 08 / 评测与交付</div>
 <h1><span class="title-line">长任务评测：</span><span class="title-line">产物、轨迹与基础设施噪声</span></h1>
-<p class="lede">从 AgencyBench、AgentLAB 与 METR 的评测口径出发，区分交付质量、可靠性、安全和环境造成的分数差异。</p>
-<div class="article-meta"><time datetime="2026-10-15">2026-10-15</time><span>约 17 分钟</span><a href="../content/08-agent-evaluation.md" download>Markdown 源文 ↗</a></div>
+<p class="lede">从 AgencyBench、AgentLAB、METR 与插件评测案例出发，区分交付质量、轨迹因果、可靠性及基础设施噪声。</p>
+<div class="article-meta"><time datetime="2026-10-19">2026-10-19</time><span>约 19 分钟</span><a href="../content/08-agent-evaluation.md" download>Markdown 源文 ↗</a></div>
 <div class="tag-row"><span class="tag">AgencyBench</span><span class="tag">AgentLAB</span><span class="tag">METR</span><span class="tag">可靠性</span></div>
 </header>
 <div class="article-layout">
@@ -37,13 +37,14 @@
 <li><a href="#section-5">AgentLAB：安全需要检查整条轨迹</a></li>
 <li><a href="#section-6">最小复现记录与判分合同</a></li>
 <li><a href="#h-9a11bf9073a3">生产 trace 进入评测前先说明缺失机制</a></li>
+<li><a href="#h-5b03df364565">并行轨迹必须保留调用批次与依赖关系</a></li>
 <li><a href="#section-7">更新记录与证据边界</a></li>
 <li><a href="#sources">来源与证据说明</a></li>
 </ul></div>
 <button class="complete-button" type="button" data-slug="agent-evaluation" aria-pressed="false">标记已学习</button><button class="print-button" type="button">打印 / 保存 PDF</button></aside>
 <article class="prose"><h2 id="section-1">评测对象是一个完整系统</h2>
 <p>专业 Agent 评测至少固定模型版本、推理预算、Harness、工具、任务集、资源和 grader。最终文字、生成产物、环境状态和行动轨迹是不同观察面。一次演示能证明某条轨迹成功，不能说明换一个 seed、资源配置或任务顺序后的可靠性。</p>
-<p>下列评测研究与方法材料的核查日为 <strong>2026-10-13</strong>。选用 2026 年已经发布的材料，保留原始版本；没有将历史实验中的模型顺序写成 10 月产品排名，也没有复跑下面的分数。</p>
+<p>下列基础评测研究与方法材料的核查日为 <strong>2026-10-13</strong>；后续补充的生产 trace 与并行轨迹案例分别注明核查日期。选用 2026 年已经发布的材料，保留原始版本；没有将历史实验中的模型顺序写成 10 月产品排名，也没有复跑下面的分数。</p>
 <h2 id="section-2">AgencyBench：把交付要求落实到 grader</h2>
 <p>AgencyBench v4 包含 6 类能力、32 个真实场景和 138 个任务，每项明确 queries、deliverables 与 rubrics。它用用户模拟 Agent 提供迭代反馈，在独立工作区生成产物，再同步到 Docker 环境执行和渲染，最后在 eval-space 进行规则或模型判分。论文所述约 90 次工具调用、约 1M tokens 是场景执行的统计描述，不是模型上下文窗口要求。<sup><a href="#cite-1">[1]</a></sup></p>
 <p><strong>实现取舍（工程推导）</strong>：执行者与验收环境分离能减少对自述完成状态的依赖，却引入环境同步、截图和 grader 版本等新变量。每次同步应记录产物哈希；功能检查和视觉 rubric 分开报告；失败时保留执行日志，区分代码不正确、服务未启动、渲染超时和 judge 不确定。用户模拟器也需要版本化，因为不同反馈可能改变任务难度。</p>
@@ -85,8 +86,15 @@
 <p>原生 tracing 降低了收集生产轨迹的成本，但送达的 trace 仍是带有观察条件的样本。以 <a href="claude.html">Claude Platform 的 OpenTelemetry</a> 为例，先核对它实际覆盖的客户端 / API 路径、sampling、交付和内容限制，再决定是否足以重建一个 trial。不能只用送达的 traces 推断所有运行的成功率或安全性。</p>
 <p><strong>工程建议（未执行）</strong>：在复现记录中补充导出覆盖范围、去重键、内容模式、截断标记、脱敏策略，以及 SDK、span schema、exporter 与 grader 版本；用请求 ID 将 trial、轨迹和产物关联。缺少关键证据的 trial 保留 <code>unknown</code>，不把“没有违规 span”计为安全通过，也不把缺失内容补成模型未采取行动。</p>
 <p>用独立请求记录或用量数据校验覆盖，并分别报告全部 trial 数、观测到的 trial 数与证据充分的 trial 数。检查丢失是否集中在超时、异常或长输出等条件，避免只保留容易送达和判分的样本；这些分母与过滤规则应随结果发布。本次没有运行 exporter 或新的模型评测。</p>
+<h2 id="h-5b03df364565">并行轨迹必须保留调用批次与依赖关系</h2>
+<p>Google Cloud 于 <strong>2026-10-16</strong> 发布插件评测工程案例：一次 assistant turn 把 skill-loading 与两次文档搜索放进同一 <code>tool_calls</code> 批次并发派发；加载 skill 的首次调用只返回启动信息，完整指导在下一轮才进入上下文，因此搜索已经先于指导执行。把日志压成顺序列表，会掩盖这个依赖没有满足的问题。<sup><a href="#cite-8">[8]</a></sup></p>
+<p>这属于作者报告的插件评测案例；文章未给该现象对应的固定 Harness 版本或修复提交。本文于 <strong>2026-10-17</strong> 读取正文，<strong>2026-10-19</strong> 复核，没有复现该任务，也不据此宣称所有 Skills 实现都有相同行为。</p>
+<p><strong>工程建议（未执行）</strong>：除时间戳与 call ID 外，保存 assistant turn、dispatch batch、任务依赖和指导实际注入上下文的时刻。判分“先读取操作约束，再调用工具”时，检查后续行动是否真正发生在约束可用之后；日志中的显示顺序、工具的最终完成顺序和模型的最终总结都不足以单独证明这一点。</p>
+<p>可用同一任务比较“同批次派发”与“等待指导注入后再派发”，保持模型、预算、工具和 grader 不变，检查行动参数与最终产物。若前置调用失败或证据缺失，保留相应失败或 unknown，不把后续动作发生过就计为依赖满足。恢复后的任务和写入去重还需单独验证，见<a href="agent-engineering.html#h-63ca480a482b">运行时恢复案例</a>。</p>
 <h2 id="section-7">更新记录与证据边界</h2>
 <ul>
+<li>2026-10-19：复核新增 Google Cloud 案例及其发布日期、并发调用与指导注入机制；未运行对照实验，既有论文与生产 trace 文档核查日期不变。</li>
+<li>2026-10-17：依据 10 月 16 日 Google Cloud 插件评测案例，补充调用批次、指导注入与依赖关系的轨迹验收；对照实验为工程建议，未运行。</li>
 <li>2026-10-15：新增生产 trace 进入评测前的覆盖、去重、截断、脱敏、版本和缺失机制检查；链接运行时篇的一手文档核查，未运行 exporter 或相关评测，原研究日期不变。</li>
 <li>2026-10-13：新增长任务交付、重复运行、基础设施干扰、时间跨度和长轨迹安全的评测合同。</li>
 <li>AgencyBench 使用 2026-04-23 v4；AgentLAB 使用 2026-02-18 v1；没有混用后续榜单。</li>
@@ -103,13 +111,14 @@
 <li id="cite-5"><a href="https://metr.org/blog/2026-1-29-time-horizon-1-1/" target="_blank" rel="noopener noreferrer">METR · Time Horizon 1.1</a><span class="source-meta">2026-01-29 · 2026-10-13 核查任务扩充与长任务时间测量限制</span></li>
 <li id="cite-6"><a href="https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/" target="_blank" rel="noopener noreferrer">METR · Impact of modeling assumptions on time horizon results</a><span class="source-meta">2026-03-20 · 2026-10-13 核查正则化与结果敏感性 · 审阅较少的研究笔记</span></li>
 <li id="cite-7"><a href="https://arxiv.org/html/2602.16901v1" target="_blank" rel="noopener noreferrer">Jiang 等 · AgentLAB，v1</a><span class="source-meta">2026-02-18 · 2026-10-13 核查威胁分类、评测指标及表 3 · 未复跑</span></li>
+<li id="cite-8"><a href="https://cloud.google.com/blog/topics/developers-practitioners/four-eval-engineering-lessons" target="_blank" rel="noopener noreferrer">Google Cloud · Four evaluation engineering lessons learned from building agent plugins</a><span class="source-meta">2026-10-16 发布，未给日内时间 · 2026-10-17 读取全文，2026-10-19 复核并行 dispatch 与指导注入的因果案例 · 作者实践报告，未给固定 Harness 版本，未独立复现</span></li>
 </ol>
 </div></footer>
 </article>
 </div>
 <a class="next-article" href="agent-teams.html"><small>继续阅读 →</small><strong>Agent Teams：协作拓扑、状态边界与等预算评测</strong></a>
 </main>
-<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-15 · 正文与来源随 Git 维护</span></footer>
+<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-19 · 正文与来源随 Git 维护</span></footer>
 </div>
 </body>
 </html>

@@ -5,9 +5,9 @@
   "topic": "评测与交付",
   "summary": "用状态、工具、记忆、权限与验收约束组织系统设计，选择最小可证伪实验，再逐项增加复杂度。",
   "order": 6,
-  "updated": "2026-10-13",
+  "updated": "2026-10-19",
   "tags": ["系统设计", "RLM", "LangGraph", "实验方法"],
-  "minutes": 22
+  "minutes": 26
 }
 ---
 
@@ -55,11 +55,21 @@
 
 ### 2. Durable execution 与恢复
 
-Anthropic 的持久 Session 在 Harness 外保存事件，LangGraph 用 checkpointer / thread id 保存工作流进度。二者都提供恢复能力，但恢复并不总是从相同代码行继续。当前 Checkpointers 文档说明，重放跳过检查点之前的节点，重新执行之后的节点，包括 LLM 与 API 调用。<sup><a href="#cite-2">[2]</a></sup><sup><a href="#cite-6">[6]</a></sup>
+Anthropic 的持久 Session 在 Harness 外保存事件，LangGraph 用 checkpointer / thread id 保存工作流进度。正常恢复与主动从历史检查点重放，需要分别理解：重放会重新执行检查点之后的节点，包括其中的 LLM 与 API 调用，不能把恢复笼统理解为从原代码行继续。<sup><a href="#cite-2">[2]</a></sup><sup><a href="#cite-6">[6]</a></sup>
 
 因此，应把副作用包装成可记录的任务，并使用幂等键或外部状态查询。执行成功却没持久化结果是典型的不确定区间。**检查点能记住系统知道的状态，不能自动知道外部世界已发生但尚未被记录的行动。**
 
 LangGraph 文档还区分 `exit`、`async`、`sync` durability；性能和中途崩溃的恢复强度不同。内存 checkpointer 适合入门，但不能据此声称进程重启后的持久恢复已完成。<sup><a href="#cite-6">[6]</a></sup>
+
+#### LangGraph 1.2.16：分别检查重复执行与重复写入
+
+LangGraph **1.2.16 于 2026-10-16 22:11:28 UTC 发布**。本节在 **2026-10-17** 核查发行说明、相关 PR diff 与 release commit `41c9c22fdc83d68a2859d0c9a2b627c8615a792f` 的回归用例，**2026-10-19** 复核所选来源；没有安装运行框架或执行故障注入。此次发布提供了三个具体的恢复边界案例。<sup><a href="#cite-23">[23]</a></sup>
+
+- **一个审批答案无效，不应取消其他已获回答的任务。** PR #9265 调整运行器：某个 resume 值未通过 `response_schema` 校验时，不再因此取消同一步的其他任务，让它们完成并保存结果，再报告无效答案。上游异步测试用列表追加模拟发送请求，随后等待；先批准发送并给另一任务无效答案，再修正答案，断言模拟发送只发生一次。这是测试中的副作用计数，不能当作真实邮件服务的 exactly-once 证明；一般节点错误触发的取消路径不由这项修复覆盖。<sup><a href="#cite-24">[24]</a></sup>
+- **正常 resume 与历史 replay 要有不同判定。** PR #9315 修正普通 subgraph resume、显式指定当前 head checkpoint 等路径被误判为 replay 的问题，正常恢复复用已完成任务保存的写入；真正的 time travel 或恢复已被后续进展越过的 checkpoint，仍可重跑。`interrupt` 前的节点代码仍可能重新执行，不能概括为“所有节点只运行一次”。显式 `checkpoint_id` 可能增加一次检查点读取；该 PR 也未覆盖所有嵌套 `@entrypoint` / `@task` 中断问题。<sup><a href="#cite-25">[25]</a></sup>
+- **reducer 更新次数与任务执行次数都要验证。** PR #9322 让普通 pending writes 排在 resume 特殊写之前，保持按列表位置保存的普通写索引稳定，避免连续 `Command(resume=..., update=...)` 重复应用更新。上游三次恢复的测试检查 `u1`、`u2`、`u3` 各出现一次。该问题涉及 `sync` / `async` durability；`exit` 的配套 PR #9314 则限制退出时重新保存的 pending writes，只处理本次实际写入的任务。<sup><a href="#cite-26">[26]</a></sup><sup><a href="#cite-27">[27]</a></sup>
+
+**工程推导**：这些修复缩小了已知恢复路径中的重复执行和重复状态更新问题，没有把 checkpoint 与外部 API 写入组成同一事务。外部请求成功后、结果持久化前的崩溃窗口仍需业务幂等、去重记录或适用的事务性 outbox 设计处理。验收分别统计最终 state、任务调用次数与外部实际操作次数；再区分正常 resume、历史 replay、无效审批答案和真实进程崩溃。上述验证建议未执行。
 
 ### 3. Context engineering 与 RLM
 
@@ -116,6 +126,12 @@ Anthropic 研究系统把子 Agent 当独立检索与压缩单元；Cognition �
 
 官方 Cursor 缓存优化、Claude 缓存定价更新与 OpenAI 模型价格都说明，成本应按完整任务轨迹计算。至少分别记录 uncached input、cached input、output、工具次数、重试、子 Agent、execution idle time 与每成功任务费用。<sup><a href="#cite-18">[18]</a></sup><sup><a href="#cite-19">[19]</a></sup>
 
+DeepSeek 的 Search / Fetch 提供了一个工具费用与 token 费用分账的例子。官方滚动文档在 **2026-10-18 核查、2026-10-19 复核**时说明：通过 DeepSeek API 在 DeepSeek Harness、Claude Code、Codex 中触发的服务端 Search / Fetch 调用，目前未计费，将于**北京时间 2026-11-01 00:00** 起收费；两类接口各按每 1,000 次成功请求 **5 元人民币**计费。独立 Search / Fetch API 已列出按次收费规则，不能把 11 月 1 日外推成所有搜索与抓取 API 首次收费的日期；模型 token 费用另计。文档没有可独立确认的发布日期，核查日与生效日须分开。<sup><a href="#cite-28">[28]</a></sup><sup><a href="#cite-29">[29]</a></sup>
+
+这里的计费成功要求 **HTTP 200 且产生有效结果**：Search 的 `results` 非空，Fetch 返回网页正文。失败、空搜索和超时不收取该次工具费用；`count` 只改变结果条数，不改变单次请求价格。Search 未返回网页正文也不等于免费，其判据是搜索结果是否非空。官方建议等待后重试 408、429 与 5xx；402 要先处理余额问题，其余 4xx 在请求不变时不要重试。<sup><a href="#cite-29">[29]</a></sup>
+
+**工程建议（未执行）**：给工具成功请求建立独立账本，记录 attempt ID、状态码、有效结果证据、重试关系与适用价格，再与 token 账本汇总。重复成功请求应分别预留费用，不能假定服务端会按重试关系免单。客户端本地超时也不必然代表服务端未完成；这类记录先保留 unknown，随后对账，不直接记为零费用。本篇没有发起付费调用或运行计费实验。
+
 对于排队与配额学习，可在同一模型 / effort / 工具集下比较时延与 outcome。将用户限额、模型全局配额、执行 worker 容量分开建模；并发更多可能减少排队，也可能放大限流、缓存冷启动与成本。这是工程练习建议，不是本篇已经测得的结论。
 
 评测同时看最终产物、环境状态、行为边界与用户路径。任务成功不能只由最后一句回答判断；代码生成还应看范围、回归、安全和测试有效性。<sup><a href="#cite-20">[20]</a></sup><sup><a href="#cite-21">[21]</a></sup>
@@ -171,6 +187,9 @@ GitHub 项目发现可用组合查询，例如 `agent in:readme language:python 
 
 ## 更新记录与证据边界
 
+- 2026-10-19：复核本次新增的 LangGraph 与 DeepSeek 官方来源；明确来源日期、核查日期和计费生效日期，旧产品与论文核查日期不变。未执行框架或计费实验。
+- 2026-10-18：核查 DeepSeek Search / Fetch 服务端集成的计费生效范围、成功判据与重试边界，补充工具费用分账建议；滚动文档没有独立确认的发布日期。
+- 2026-10-17：核查 10 月 16 日 LangGraph 1.2.16，补充无效 resume、已完成子任务复用及 reducer / pending-write 去重边界；阅读固定版本源码与上游测试，未本地复跑或验证真实外部副作用。
 - 2026-10-13：改为技术问题索引，补充失败→研究方向→证据映射，以及复杂度增量实验；保留既有八个方向和四周项目。
 
 - 2026-10-13：创建八个工程方向、四周学习计划与资料地图。
@@ -203,5 +222,12 @@ GitHub 项目发现可用组合查询，例如 `agent in:readme language:python 
 <li id="cite-20"><a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Anthropic · Demystifying evals for AI agents</a><span class="source-meta">2026-01-09 · 官方评测方法已读取</span></li>
 <li id="cite-21"><a href="https://cognition.ai/blog/frontier-code">Cognition · Introducing FrontierCode</a><span class="source-meta">2026-06-08 · 原始评测方法已读取</span></li>
 <li id="cite-22"><a href="https://github.com/langchain-ai/langgraph">LangGraph · 官方实现与 Academy 入口</a><span class="source-meta">2026-10-13 README 已读取 · 未运行完整框架</span></li>
+<li id="cite-23"><a href="https://github.com/langchain-ai/langgraph/releases/tag/1.2.16">LangGraph · 1.2.16 发布记录</a><span class="source-meta">2026-10-16 22:11:28 UTC 发布 · 2026-10-17 核查，2026-10-19 复核 · 固定 release commit 41c9c22fdc83d68a2859d0c9a2b627c8615a792f · 未运行框架</span></li>
+<li id="cite-24"><a href="https://github.com/langchain-ai/langgraph/pull/9265">LangGraph · 无效 resume 不取消同一步其他任务，PR #9265</a><span class="source-meta">2026-10-16 合入，commit b0cabd93d05508d246318c92b41b3952fe56f5c3 · 2026-10-17 核查，2026-10-19 复核 runner diff 与模拟副作用回归测试 · 未复跑</span></li>
+<li id="cite-25"><a href="https://github.com/langchain-ai/langgraph/pull/9315">LangGraph · 恢复时复用已完成子任务，PR #9315</a><span class="source-meta">2026-10-15 合入，随 1.2.16 发布，commit b0482d0627ec8fdf7c91fba7ffd17403583c59d0 · 2026-10-17 核查，2026-10-19 复核 head checkpoint、subgraph 与 replay 测试边界 · 未复跑</span></li>
+<li id="cite-26"><a href="https://github.com/langchain-ai/langgraph/pull/9322">LangGraph · Command 恢复更新只应用一次，PR #9322</a><span class="source-meta">2026-10-16 合入，commit e14f4277dc43e1d12981a36c02757fbec6ede217 · 2026-10-17 核查，2026-10-19 复核 pending-write 排序与连续恢复的 reducer 测试 · 未复跑</span></li>
+<li id="cite-27"><a href="https://github.com/langchain-ai/langgraph/pull/9314">LangGraph · exit 恢复不重复保存已有 pending writes，PR #9314</a><span class="source-meta">2026-10-15 合入，随 1.2.16 发布，commit 889a5ff16f8325113093d517dffd5471a943c760 · 2026-10-17 核查，2026-10-19 复核本次写入任务集合与并行中断测试 · 未复跑</span></li>
+<li id="cite-28"><a href="https://api-docs.deepseek.com/zh-cn/quick_start/pricing/">DeepSeek · 模型与价格</a><span class="source-meta">滚动官方文档，未确认独立发布日期 · 2026-10-18 核查，2026-10-19 复核 Search / Fetch 价格与服务端集成计费生效范围 · 生效时间为北京时间 2026-11-01 00:00 · 未调用或验证账单</span></li>
+<li id="cite-29"><a href="https://api-docs.deepseek.com/zh-cn/guides/search/">DeepSeek · 网页搜索与抓取</a><span class="source-meta">滚动官方文档，未确认独立发布日期 · 2026-10-18 核查，2026-10-19 复核成功判据、count、错误与重试规则 · 未运行接口或计费实验</span></li>
 </ol>
 </div></footer>
