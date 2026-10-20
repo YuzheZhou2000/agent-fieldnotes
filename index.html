@@ -17,7 +17,7 @@
 <div class="wrap">
 <nav class="topbar" aria-label="主导航">
 <a class="brand" href="index.html"><span class="brand-mark">a.</span> Agent Fieldnotes</a>
-<div class="nav-actions"><a href="#directions">技术方向</a><a href="#library">研究笔记</a><a href="#path">设计路线</a><button class="theme-button" type="button" aria-label="切换浅色与深色主题">主题 ◐</button></div>
+<div class="nav-actions"><a class="nav-primary" href="learn.html">学习地图</a><a class="nav-primary" href="tools/loop-lab.html">执行实验室</a><a href="#directions">技术方向</a><a href="#library">研究笔记</a><a href="#path">设计路线</a><button class="theme-button" type="button" aria-label="切换浅色与深色主题">主题 ◐</button></div>
 </nav>
 <main id="main">
 <header class="masthead">
@@ -25,21 +25,21 @@
 <div class="eyebrow">AGENT SYSTEMS / RESEARCH FIELDNOTES</div>
 <h1><span class="title-line">设计可验证的</span><span class="title-line"><em>Agent</em> 系统。</span></h1>
 <p class="hero-intro">面向专业 Agent 工程师。从技术问题进入研究：拆解机制与接口，比较实现取舍，用可追溯的证据检验适用条件。</p>
-<div class="hero-links"><a class="primary-link" href="posts/agent-engineering.html">系统设计地图 <span>↗</span></a><a href="#library" class="quiet-link">浏览研究笔记 →</a></div>
+<div class="hero-links"><a class="primary-link" href="learn.html">沿学习地图出发 <span>↗</span></a><a href="posts/agent-engineering.html" class="quiet-link">系统设计路径 →</a><a href="#library" class="quiet-link">浏览研究笔记 →</a></div>
 </div><div class="hero-note"><span class="mono">EVIDENCE CHECKED</span><strong>2026-10-20</strong><p>机制 · 实现取舍 · 评估证据<br>适用条件 · 局限</p><div class="note-rule"></div><span class="note-label">一手论文与公开实现<br>作者结果与工程推导分开标注</span></div></div>
-<div class="edition-row"><span><i class="status-dot"></i> 11 篇工程与研究笔记</span><span>一手来源 · 技术分类 · 离线全文搜索</span><span class="learning-status" aria-live="polite">学习进度 0 / 11</span></div>
+<div class="edition-row"><span><i class="status-dot"></i> 13 篇工程与研究笔记</span><span>一手来源 · 技术分类 · 离线全文搜索</span><span class="learning-status" aria-live="polite">学习进度 0 / 13</span></div>
 </header>
-<section class="frontier-strip" aria-label="研究更新"><span class="rail-label">研究更新</span><p><strong>工具系统：模型开放之后，仍要核对运行时合同。</strong> 更新 Argon API 的可用性、持续生成与恢复边界，补充 ADK Python 2.12.0 的工具结果检查和节点确认；团队协作专题继续提供等预算评测与选型入口。来源日期、核查日和未实测项在正文注明。</p></section>
+<section class="frontier-strip" aria-label="本批新增"><span class="rail-label">基础与练习</span><p><strong>从阅读机制，走到操作一个控制回路。</strong> 新增<a href="posts/agent-loop.html">执行循环</a>与<a href="posts/context-retrieval.html">上下文检索</a>两篇基础专题，在<a href="tools/loop-lab.html">执行循环实验室</a>观察审批、重试和预算。近期产品与研究案例继续按技术方向维护。</p></section>
 <section id="directions" class="library-section">
 <div class="section-heading"><div><span class="section-index">01 / RESEARCH DIRECTIONS</span><h2>先选一个技术问题。</h2></div><span>五个方向</span></div>
-<div class="direction-grid"><a class="direction-card" href="posts/openai.html" data-choose-topic="运行时与状态"><span class="mono">01</span><h3>运行时与状态</h3><p>循环、事件日志、检查点与故障恢复</p><small>2 篇笔记 →</small></a>
-<a class="direction-card" href="posts/agent-memory.html" data-choose-topic="记忆与上下文"><span class="mono">02</span><h3>记忆与上下文</h3><p>工作集、文件记忆、检索与策略训练</p><small>1 篇笔记 →</small></a>
+<div class="direction-grid"><a class="direction-card" href="posts/agent-loop.html" data-choose-topic="运行时与状态"><span class="mono">01</span><h3>运行时与状态</h3><p>循环、事件日志、检查点与故障恢复</p><small>3 篇笔记 →</small></a>
+<a class="direction-card" href="posts/context-retrieval.html" data-choose-topic="记忆与上下文"><span class="mono">02</span><h3>记忆与上下文</h3><p>工作集、文件记忆、检索与策略训练</p><small>2 篇笔记 →</small></a>
 <a class="direction-card" href="posts/gemini.html" data-choose-topic="工具与协议"><span class="mono">03</span><h3>工具与协议</h3><p>能力发现、调度、MCP 与 A2A</p><small>2 篇笔记 →</small></a>
 <a class="direction-card" href="posts/muse.html" data-choose-topic="权限与安全"><span class="mono">04</span><h3>权限与安全</h3><p>身份、凭据、行动范围与来源传播</p><small>1 篇笔记 →</small></a>
 <a class="direction-card" href="posts/agent-evaluation.html" data-choose-topic="评测与交付"><span class="mono">05</span><h3>评测与交付</h3><p>协作、产物验收、可靠性与完整成本</p><small>5 篇笔记 →</small></a></div>
 </section>
 <section id="library" class="library-section">
-<div class="section-heading"><div><span class="section-index">02 / FIELDNOTES</span><h2>从问题读到机制与证据。</h2></div><span id="result-count" aria-live="polite">11 篇文章</span></div>
+<div class="section-heading"><div><span class="section-index">02 / FIELDNOTES</span><h2>从问题读到机制与证据。</h2></div><span id="result-count" aria-live="polite">13 篇文章</span></div>
 <div class="library-controls"><label class="search-box"><span class="sr-only">搜索文章全文</span><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="搜索全文：幂等、CAMG、工具调度、grader…" autocomplete="off"></label><div class="filters" role="group" aria-label="按技术方向筛选"><button type="button" data-filter="all" aria-pressed="true">全部</button><button type="button" data-filter="运行时与状态" aria-pressed="false">运行时与状态</button><button type="button" data-filter="记忆与上下文" aria-pressed="false">记忆与上下文</button><button type="button" data-filter="工具与协议" aria-pressed="false">工具与协议</button><button type="button" data-filter="权限与安全" aria-pressed="false">权限与安全</button><button type="button" data-filter="评测与交付" aria-pressed="false">评测与交付</button></div></div>
 <div class="card-grid"><a class="card" href="posts/agent-memory.html" data-topic="记忆与上下文" data-slug="agent-memory">
 <div class="thumb"><span class="card-number">07</span><span class="learned-badge" hidden>已学习 ✓</span><svg viewBox="0 0 240 90" aria-hidden="true"><path class="edge" d="M60 45H180"/><rect class="node" x="25" y="20" width="70" height="50" rx="8"/><rect class="accent-node" x="145" y="20" width="70" height="50" rx="8"/></svg></div>
@@ -56,6 +56,12 @@
 <a class="card" href="posts/agent-interview-prep.html" data-topic="评测与交付" data-slug="agent-interview-prep">
 <div class="thumb"><span class="card-number">11</span><span class="learned-badge" hidden>已学习 ✓</span><svg viewBox="0 0 300 110" aria-hidden="true"><rect class="node" x="70" y="14" width="160" height="82" rx="8"/><path class="edge" d="M104 38h100m-100 18h100m-100 18h80"/><path class="edge" d="M87 35l4 4 7-9m-11 24 4 4 7-9m-11 25 4 4 7-9"/></svg></div>
 <div class="card-body"><div class="card-meta">评测与交付<span>约 95 分钟</span></div><h3>Agent 工程面试准备：Qoder、WorkBuddy 与工程题库</h3><p>从公开面经与官方岗位出发，整理 50 道核心题、4 道系统设计题、8 道编程练习，以及项目复盘、模拟面试和四周准备计划。</p><div class="tag-row"><span class="tag">面试准备</span><span class="tag">Qoder</span><span class="tag">WorkBuddy</span><span class="tag">Harness</span><span class="tag">后端工程</span></div><div class="card-footer"><time datetime="2026-10-13">2026-10-13</time><span class="arrow">→</span></div></div></a>
+<a class="card" href="posts/agent-loop.html" data-topic="运行时与状态" data-slug="agent-loop">
+<div class="thumb"><span class="card-number">12</span><span class="learned-badge" hidden>已学习 ✓</span><svg viewBox="0 0 300 110" aria-hidden="true"><rect class="node" x="22" y="22" width="68" height="36" rx="7"/><rect class="accent-node" x="116" y="22" width="68" height="36" rx="7"/><rect class="node" x="210" y="22" width="68" height="36" rx="7"/><path class="edge" d="M90 40h26m68 0h26m34 18v26H56V58m-6 8 6-8 6 8"/><circle class="dot" cx="150" cy="84" r="4"/></svg></div>
+<div class="card-body"><div class="card-meta">运行时与状态<span>约 18 分钟</span></div><h3>Agent 执行循环：从规划到可验证的停止</h3><p>从任务合同出发，拆开决策、授权、执行与验收，理解 ReAct、规划重算、重试和结果未知的控制边界。</p><div class="tag-row"><span class="tag">基础</span><span class="tag">Agent Loop</span><span class="tag">ReAct</span><span class="tag">规划与控制</span></div><div class="card-footer"><time datetime="2026-10-20">2026-10-20</time><span class="arrow">→</span></div></div></a>
+<a class="card" href="posts/context-retrieval.html" data-topic="记忆与上下文" data-slug="context-retrieval">
+<div class="thumb"><span class="card-number">13</span><span class="learned-badge" hidden>已学习 ✓</span><svg viewBox="0 0 300 110" aria-hidden="true"><rect class="node" x="25" y="15" width="60" height="75" rx="6"/><path class="edge" d="M38 34h34M38 48h34M38 62h24m13 14h36m0-8v16"/><rect class="accent-node" x="122" y="29" width="64" height="47" rx="7"/><path class="edge" d="M186 52h25"/><rect class="node" x="218" y="22" width="57" height="62" rx="6"/><path class="edge" d="M230 40h32m-32 13h32m-32 13h21"/></svg></div>
+<div class="card-body"><div class="card-meta">记忆与上下文<span>约 20 分钟</span></div><h3>上下文与检索：把证据装进每一轮决策</h3><p>沿查询、切分、召回、过滤、重排与上下文装配定位失败，用版本、来源与分阶段评测约束 RAG 和按需探索。</p><div class="tag-row"><span class="tag">基础</span><span class="tag">上下文工程</span><span class="tag">RAG</span><span class="tag">检索评测</span></div><div class="card-footer"><time datetime="2026-10-20">2026-10-20</time><span class="arrow">→</span></div></div></a>
 <a class="card" href="posts/openai.html" data-topic="运行时与状态" data-slug="openai">
 <div class="thumb"><span class="card-number">01</span><span class="learned-badge" hidden>已学习 ✓</span><svg viewBox="0 0 300 110" aria-hidden="true"><rect class="node" x="24" y="25" width="64" height="35" rx="7"/><path class="edge" d="M88 42h28m64 0h28"/><rect class="accent-node" x="116" y="25" width="64" height="35" rx="7"/><rect class="node" x="208" y="25" width="64" height="35" rx="7"/><path class="edge" d="M148 60v22H56V60"/></svg></div>
 <div class="card-body"><div class="card-meta">运行时与状态<span>约 21 分钟</span></div><h3>Agent 运行时：工具循环、Harness 与执行环境</h3><p>定义模型、会话与执行环境的接口合同，以审批、压缩和持久化更新检验长任务恢复的边界。</p><div class="tag-row"><span class="tag">工具循环</span><span class="tag">Harness</span><span class="tag">OpenAI</span><span class="tag">Codex</span></div><div class="card-footer"><time datetime="2026-10-16">2026-10-16</time><span class="arrow">→</span></div></div></a>
@@ -77,6 +83,7 @@
 <p class="empty-state" hidden>没有找到相关文章。试试更短的关键词，或切换到「全部」。</p>
 </section>
 <section id="path" class="path-section">
+<div class="learning-callout"><div><span class="section-index">LEARNING MAP / FIRST EXPANSION</span><h2>从基础到交付，看到下一步。</h2><p>九个学习阶段连接已有专题；训练适配与服务治理明确列为待补。覆盖标签描述本站内容，不代表你已完成学习。</p></div><div><a href="learn.html">查看完整学习地图 →</a><a href="tools/loop-lab.html">打开执行循环实验室 ↗</a></div></div>
 <div class="section-heading"><div><span class="section-index">03 / DESIGN PATH</span><h2>用实验推动系统设计。</h2></div><span>四个阶段</span></div>
 <div class="path-grid">
 <div class="path-card"><span>01</span><h3>定义运行时合同</h3><p>确定循环、调度、取消与执行环境的边界。</p><a href="posts/openai.html">运行时与接口 →</a></div>

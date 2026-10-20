@@ -1,0 +1,104 @@
+{
+  "updated": "2026-10-20",
+  "stages": [
+    {
+      "id": "loop",
+      "title": "目标、规划与执行循环",
+      "coverage": "available",
+      "kind": "本批新增基础",
+      "question": "下一步由谁决定，什么时候应该停？",
+      "outcome": "能把策略、授权、执行和验收拆开，解释成功、失败、取消与未知。",
+      "posts": ["agent-loop", "agent-engineering"],
+      "exercise": "在执行循环实验室比较正常、响应丢失与预算耗尽三条路径。",
+      "next": "待深化：任务分解质量、搜索规划与反思的等预算对照。"
+    },
+    {
+      "id": "context",
+      "title": "上下文、检索与记忆",
+      "coverage": "available",
+      "kind": "本批新增基础",
+      "question": "模型实际看到了哪些当前、可用的证据？",
+      "outcome": "能沿切分、召回、重排、装配和引用定位失败，再阅读记忆策略研究。",
+      "posts": ["context-retrieval", "agent-memory"],
+      "exercise": "用十个手写文档构造旧版本、精确符号与无答案检索题。",
+      "next": "待深化：代码索引增量更新、重排实现与上下文干预实验。"
+    },
+    {
+      "id": "tools",
+      "title": "工具接口、协议与调度",
+      "coverage": "available",
+      "kind": "已有专题入口",
+      "question": "能发现工具，是否就有权执行？",
+      "outcome": "能区分能力发现、函数执行、MCP、Skills 与跨 Agent 协议。",
+      "posts": ["gemini"],
+      "exercise": "给一个读工具和一个写工具分别列参数、结果和错误合同。",
+      "next": "待深化：协议兼容测试、schema 演化和工具测试夹具。"
+    },
+    {
+      "id": "trust",
+      "title": "身份、审批与隔离",
+      "coverage": "available",
+      "kind": "已有专题入口",
+      "question": "授权、凭据与证据信任在哪个边界生效？",
+      "outcome": "能解释行动权限、凭据可见性、出网控制和来源传播的区别。",
+      "posts": ["muse"],
+      "exercise": "列出外部文档进入上下文后不能获得的执行权限。",
+      "next": "待深化：注入攻击测试集、最小权限实践与跨租户隔离。"
+    },
+    {
+      "id": "durability",
+      "title": "长任务状态与故障恢复",
+      "coverage": "available",
+      "kind": "已有专题入口",
+      "question": "重启之后，哪些事实仍然可信？",
+      "outcome": "能分开事件日志、模型工作集、产物及外部副作用的恢复合同。",
+      "posts": ["openai", "claude"],
+      "exercise": "画出提交成功但结果尚未持久化时的未知区间。",
+      "next": "待深化：持久化后端实作、并发写入、取消与故障注入。"
+    },
+    {
+      "id": "collaboration",
+      "title": "协作、分工与共享产物",
+      "coverage": "available",
+      "kind": "已有专题入口",
+      "question": "多一个执行者购买了什么可测收益？",
+      "outcome": "能区分任务依赖图与通信拓扑，并设计共享状态和单写者边界。",
+      "posts": ["agent-teams", "team-agent-products"],
+      "exercise": "先画单 Agent 基线，再说明哪一个瓶颈需要并行。",
+      "next": "待深化：调度策略实现、通信消融和团队取消语义。"
+    },
+    {
+      "id": "evaluation",
+      "title": "验收、交付与可靠性",
+      "coverage": "available",
+      "kind": "已有专题入口",
+      "question": "怎样证明产物正确，而非仅有一段成功回复？",
+      "outcome": "能固定任务、预算、环境和 grader，区分轨迹诊断与最终交付。",
+      "posts": ["agent-evaluation", "coding-agents", "agent-interview-prep"],
+      "exercise": "为一个任务写出成功、失败、无答案和环境异常的判分规则。",
+      "next": "待深化：评测集生命周期、线上回归和灰度发布的闭环。"
+    },
+    {
+      "id": "learning",
+      "title": "模型适配、训练与策略优化",
+      "coverage": "planned",
+      "kind": "待补独立专题",
+      "question": "失败需要改上下文、工具，还是训练模型？",
+      "outcome": "计划覆盖 SFT / 偏好优化 / RL 的信号、成本、数据隔离与适用边界。",
+      "posts": [],
+      "exercise": "准备材料：整理可重复的失败类型，先排除资料和执行器错误。",
+      "next": "当前只有记忆研究与面试题中的局部讨论，尚无系统教程；不计为已覆盖。"
+    },
+    {
+      "id": "operations",
+      "title": "服务化、观测与持续治理",
+      "coverage": "planned",
+      "kind": "待补独立专题",
+      "question": "单机可运行，怎样走到可升级、可回滚的服务？",
+      "outcome": "计划覆盖队列、租户配额、尾部时延、版本迁移、运行手册与成本治理。",
+      "posts": [],
+      "exercise": "准备材料：给一次任务画出从入队到验收的时延分解。",
+      "next": "当前观测和成本案例可供参考，完整部署与运维路线仍待补齐。"
+    }
+  ]
+}

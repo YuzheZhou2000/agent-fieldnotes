@@ -58,7 +58,7 @@ p { margin: 0 0 1.1em; }
 h1 em { color: var(--clay); font-weight: 500; }
 .title-line { display: block; }
 .hero-intro { max-width: 530px; color: var(--gray-700); font-size: 16px; line-height: 1.9; }
-.hero-links { display: flex; gap: 24px; align-items: center; margin-top: 29px; font-size: 13px; }
+.hero-links { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; margin-top: 29px; font-size: 13px; }
 .primary-link { color: var(--paper); background: var(--slate); padding: 10px 17px; border-radius: 6px; display: flex; gap: 22px; }
 .primary-link:hover { text-decoration: none; background: var(--clay); }
 .quiet-link { color: var(--gray-700); }
@@ -118,6 +118,10 @@ h1 em { color: var(--clay); font-weight: 500; }
 .arrow { color: var(--clay); }
 .empty-state { text-align: center; padding: 30px 10px; color: var(--gray-500); }
 .path-section { margin-top: 85px; }
+.learning-callout { display: grid; grid-template-columns: 1.6fr 1fr; gap: 35px; padding: 28px; border: 1px solid var(--olive); border-radius: 9px; margin-bottom: 40px; background: var(--olive-soft); }
+.learning-callout h2 { font-size: 26px; font-weight: 500; margin: 8px 0 12px; }
+.learning-callout p { font-size: 13px; color: var(--gray-700); margin: 0; }
+.learning-callout > div:last-child { align-self: center; display: grid; gap: 12px; font-size: 13px; }
 .path-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .path-card { border-top: 2px solid var(--oat); padding: 16px 0 0; min-width: 0; }
 .path-card > span { font-family: var(--mono); color: var(--olive); font-size: 12px; }
@@ -189,6 +193,8 @@ tr:last-child td { border-bottom: 0; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 @media (max-width: 900px) {
+  .topbar { flex-wrap: wrap; padding-block: 16px; }
+  .nav-actions { width: 100%; }
   .direction-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .hero-grid { gap: 35px; grid-template-columns: minmax(0, 1fr) 220px; }
   .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -199,11 +205,13 @@ tr:last-child td { border-bottom: 0; }
   .direction-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .direction-card { padding: 15px; }
   .wrap { padding: 0 20px; }
-  .topbar { min-height: 74px; gap: 10px; }
+  .topbar { min-height: 74px; gap: 10px; flex-wrap: wrap; padding-block: 14px; }
   .brand { font-size: 15px; gap: 7px; }
   .brand-mark { width: 26px; height: 26px; font-size: 19px; }
-  .nav-actions { gap: 10px; }
+  .nav-actions { gap: 16px; width: 100%; }
   .nav-actions > a { display: none; }
+  .nav-actions > .nav-primary { display: inline-flex; }
+  .learning-callout { grid-template-columns: 1fr; gap: 20px; padding: 20px; }
   .masthead { padding-top: 40px; }
   .hero-grid { grid-template-columns: 1fr; gap: 25px; }
   .hero-note { display: none; }

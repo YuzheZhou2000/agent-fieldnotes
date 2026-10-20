@@ -33,7 +33,7 @@ class Page(HTMLParser):
             self.slug = attrs.get("data-slug")
 
 
-pages = {p.resolve(): Page(p.read_text()) for p in [ROOT / "index.html", *ROOT.glob("posts/*.html")]}
+pages = {p.resolve(): Page(p.read_text()) for p in [ROOT / "index.html", ROOT / "learn.html", *ROOT.glob("posts/*.html"), *ROOT.glob("tools/*.html")]}
 errors = []
 for file, page in pages.items():
     if len(page.ids) != len(set(page.ids)):
@@ -83,6 +83,22 @@ if {entry["slug"] for entry in index} != set(expected) or len(index) != len(expe
 for entry in index:
     if expected[entry["slug"]]["topic"] not in entry["text"]:
         errors.append(f'{entry["slug"]}: missing technical category in search')
+route = json.loads((ROOT / "content/learning-path.json").read_text())
+learn = pages[(ROOT / "learn.html").resolve()]
+route_slugs = set()
+for stage in route["stages"]:
+    if stage["id"] not in learn.ids:
+        errors.append(f'Missing route stage: {stage["id"]}')
+    for slug in stage["posts"]:
+        route_slugs.add(slug)
+        if slug not in expected or f"posts/{slug}.html" not in learn.links:
+            errors.append(f"Invalid route article: {slug}")
+if route_slugs != set(expected):
+    errors.append("Learning route does not cover all source articles")
+lab = pages[(ROOT / "tools/loop-lab.html").resolve()]
+for required in ["loop-app", "lab-config", "scenario", "budget", "retries", "approval", "run-state", "run-log"]:
+    if required not in lab.ids:
+        errors.append(f"Missing lab element: {required}")
 if errors:
     raise SystemExit("\n".join(errors))
 print(f"Validated {len(pages)} pages, {len(metas)} source/index entries, five directions, local resources and {sum(len(v) for v in legacy_ids.values())} legacy anchors.")

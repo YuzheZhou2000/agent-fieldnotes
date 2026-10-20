@@ -23,8 +23,8 @@ const posts = fs.readdirSync(path.join(root, 'content')).filter(f => f.endsWith(
 }).sort((a,b) => a.order - b.order);
 if (new Set(posts.map(p => p.slug)).size !== posts.length) throw new Error('Duplicate slug');
 const topics = [
-  {name: '运行时与状态', text: '循环、事件日志、检查点与故障恢复', slug: 'openai'},
-  {name: '记忆与上下文', text: '工作集、文件记忆、检索与策略训练', slug: 'agent-memory'},
+  {name: '运行时与状态', text: '循环、事件日志、检查点与故障恢复', slug: 'agent-loop'},
+  {name: '记忆与上下文', text: '工作集、文件记忆、检索与策略训练', slug: 'context-retrieval'},
   {name: '工具与协议', text: '能力发现、调度、MCP 与 A2A', slug: 'gemini'},
   {name: '权限与安全', text: '身份、凭据、行动范围与来源传播', slug: 'muse'},
   {name: '评测与交付', text: '协作、产物验收、可靠性与完整成本', slug: 'agent-evaluation'}
@@ -92,11 +92,26 @@ output.set('index.html', fill(read('templates/index.html'), {
   directions: topics.map((t,i)=>`<a class="direction-card" href="posts/${t.slug}.html" data-choose-topic="${escape(t.name)}"><span class="mono">0${i+1}</span><h3>${escape(t.name)}</h3><p>${escape(t.text)}</p><small>${posts.filter(p=>p.topic===t.name).length} 篇笔记 →</small></a>`).join('\n')
 }));
 output.set('assets/search-index.js', `window.FIELDNOTES_SEARCH = ${JSON.stringify(posts.map(p=>({slug:p.slug,text:[p.title,p.summary,p.topic,...p.tags,p.body].join(' ').toLowerCase()})))};\n`);
+const route = JSON.parse(read('content/learning-path.json'));
+const knownPosts = new Map(posts.map(p => [p.slug, p]));
+if (!/^\d{4}-\d{2}-\d{2}$/.test(route.updated) || new Set(route.stages.map(s => s.id)).size !== route.stages.length) throw new Error('Invalid learning route metadata');
+for (const stage of route.stages) {
+  if (!/^[a-z-]+$/.test(stage.id) || !['available', 'planned'].includes(stage.coverage) || !stage.title || !stage.kind || !stage.question || !stage.outcome || !stage.exercise || !stage.next) throw new Error('Invalid learning route stage');
+  if (stage.posts.some(slug => !knownPosts.has(slug)) || (stage.coverage === 'available') !== (stage.posts.length > 0)) throw new Error(`Invalid route readings: ${stage.id}`);
+}
+output.set('learn.html', fill(read('templates/learn.html'), {
+  count: posts.length, updated: route.updated,
+  available: route.stages.filter(s => s.coverage === 'available').length,
+  planned: route.stages.filter(s => s.coverage === 'planned').length,
+  jumps: route.stages.map((s,i) => `<a href="#${s.id}">${i+1}. ${escape(s.title)}</a>`).join('\n'),
+  stages: route.stages.map((s,i) => `<section id="${s.id}" class="route-stage" data-coverage="${s.coverage}"><span class="route-number" aria-hidden="true">${String(i+1).padStart(2,'0')}</span><div><span class="coverage-label">${escape(s.kind)}</span><h2>${escape(s.title)}</h2><p><strong>${escape(s.question)}</strong></p><p>${escape(s.outcome)}</p>${s.posts.length ? '<ul>'+s.posts.map(slug=>`<li><a href="posts/${slug}.html">${escape(knownPosts.get(slug).title)}</a></li>`).join('')+'</ul>' : '<p>暂无独立专题，以下是准备方向。</p>'}<p><strong>练习：</strong>${escape(s.exercise)}</p><p class="route-next">${escape(s.next)}</p></div></section>`).join('\n')
+}));
+output.set('tools/loop-lab.html', fill(read('templates/loop-lab.html'), {updated: route.updated}));
 const check = process.argv.includes('--check');
 const stale = [];
 for (const [file, contents] of output) {
   if (check) { if (!fs.existsSync(path.join(root,file)) || read(file) !== contents) stale.push(file); }
-  else fs.writeFileSync(path.join(root,file), contents);
+  else { fs.mkdirSync(path.dirname(path.join(root,file)), {recursive: true}); fs.writeFileSync(path.join(root,file), contents); }
 }
 if (stale.length) throw new Error(`Generated files are stale; run npm run build:\n${stale.join('\n')}`);
 console.log(`${check ? 'Checked' : 'Built'} ${posts.length} posts, ${topics.length} technical directions, homepage and offline search.`);

@@ -17,7 +17,7 @@
 <div class="wrap">
 <nav class="topbar" aria-label="主导航">
 <a class="brand" href="index.html"><span class="brand-mark">a.</span> Agent Fieldnotes</a>
-<div class="nav-actions"><a href="#directions">技术方向</a><a href="#library">研究笔记</a><a href="#path">设计路线</a><button class="theme-button" type="button" aria-label="切换浅色与深色主题">主题 ◐</button></div>
+<div class="nav-actions"><a class="nav-primary" href="learn.html">学习地图</a><a class="nav-primary" href="tools/loop-lab.html">执行实验室</a><a href="#directions">技术方向</a><a href="#library">研究笔记</a><a href="#path">设计路线</a><button class="theme-button" type="button" aria-label="切换浅色与深色主题">主题 ◐</button></div>
 </nav>
 <main id="main">
 <header class="masthead">
@@ -25,11 +25,11 @@
 <div class="eyebrow">AGENT SYSTEMS / RESEARCH FIELDNOTES</div>
 <h1><span class="title-line">设计可验证的</span><span class="title-line"><em>Agent</em> 系统。</span></h1>
 <p class="hero-intro">面向专业 Agent 工程师。从技术问题进入研究：拆解机制与接口，比较实现取舍，用可追溯的证据检验适用条件。</p>
-<div class="hero-links"><a class="primary-link" href="posts/agent-engineering.html">系统设计地图 <span>↗</span></a><a href="#library" class="quiet-link">浏览研究笔记 →</a></div>
+<div class="hero-links"><a class="primary-link" href="learn.html">沿学习地图出发 <span>↗</span></a><a href="posts/agent-engineering.html" class="quiet-link">系统设计路径 →</a><a href="#library" class="quiet-link">浏览研究笔记 →</a></div>
 </div><div class="hero-note"><span class="mono">EVIDENCE CHECKED</span><strong>{{updated}}</strong><p>机制 · 实现取舍 · 评估证据<br>适用条件 · 局限</p><div class="note-rule"></div><span class="note-label">一手论文与公开实现<br>作者结果与工程推导分开标注</span></div></div>
 <div class="edition-row"><span><i class="status-dot"></i> {{count}} 篇工程与研究笔记</span><span>一手来源 · 技术分类 · 离线全文搜索</span><span class="learning-status" aria-live="polite">学习进度 0 / {{count}}</span></div>
 </header>
-<section class="frontier-strip" aria-label="研究更新"><span class="rail-label">研究更新</span><p><strong>工具系统：模型开放之后，仍要核对运行时合同。</strong> 更新 Argon API 的可用性、持续生成与恢复边界，补充 ADK Python 2.12.0 的工具结果检查和节点确认；团队协作专题继续提供等预算评测与选型入口。来源日期、核查日和未实测项在正文注明。</p></section>
+<section class="frontier-strip" aria-label="本批新增"><span class="rail-label">基础与练习</span><p><strong>从阅读机制，走到操作一个控制回路。</strong> 新增<a href="posts/agent-loop.html">执行循环</a>与<a href="posts/context-retrieval.html">上下文检索</a>两篇基础专题，在<a href="tools/loop-lab.html">执行循环实验室</a>观察审批、重试和预算。近期产品与研究案例继续按技术方向维护。</p></section>
 <section id="directions" class="library-section">
 <div class="section-heading"><div><span class="section-index">01 / RESEARCH DIRECTIONS</span><h2>先选一个技术问题。</h2></div><span>五个方向</span></div>
 <div class="direction-grid">{{directions}}</div>
@@ -41,6 +41,7 @@
 <p class="empty-state" hidden>没有找到相关文章。试试更短的关键词，或切换到「全部」。</p>
 </section>
 <section id="path" class="path-section">
+<div class="learning-callout"><div><span class="section-index">LEARNING MAP / FIRST EXPANSION</span><h2>从基础到交付，看到下一步。</h2><p>九个学习阶段连接已有专题；训练适配与服务治理明确列为待补。覆盖标签描述本站内容，不代表你已完成学习。</p></div><div><a href="learn.html">查看完整学习地图 →</a><a href="tools/loop-lab.html">打开执行循环实验室 ↗</a></div></div>
 <div class="section-heading"><div><span class="section-index">03 / DESIGN PATH</span><h2>用实验推动系统设计。</h2></div><span>四个阶段</span></div>
 <div class="path-grid">
 <div class="path-card"><span>01</span><h3>定义运行时合同</h3><p>确定循环、调度、取消与执行环境的边界。</p><a href="posts/openai.html">运行时与接口 →</a></div>
