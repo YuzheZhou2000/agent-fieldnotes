@@ -5,7 +5,7 @@
   "topic": "评测与交付",
   "summary": "用状态、工具、记忆、权限与验收约束组织系统设计，选择最小可证伪实验，再逐项增加复杂度。",
   "order": 6,
-  "updated": "2026-10-19",
+  "updated": "2026-10-20",
   "tags": ["系统设计", "RLM", "LangGraph", "实验方法"],
   "minutes": 26
 }
@@ -122,6 +122,14 @@ Anthropic 研究系统把子 Agent 当独立检索与压缩单元；Cognition �
 
 权限也属于产品体验。频繁确认可能增加打断，完全不看重要动作则会产生误操作。值得学习的方向是事先定义范围、生成可审查动作、结构性限制能力，并让用户在真正需要决策的位置参与。
 
+#### 子进程输入与诊断日志采用不同的数据边界
+
+LangGraph CLI **0.4.37（2026-10-19 发布）**包含 PR #9350：`subp_exec` 的 verbose 输出不再回显标准输入，只打印命令与参数。标准输入可能承载凭据，安全地传给子进程不代表也应复制进 CI 日志或终端记录。该改动没有取消给子进程传入 stdin。<sup><a href="#cite-30">[30]</a></sup><sup><a href="#cite-31">[31]</a></sup>
+
+**源码与测试阅读，非运行复现**：2026-10-20 核查固定合入提交的两文件 diff。新增上游单元测试把模拟 token 经 stdin 送入读取输入的 Python 子进程，断言 verbose 输出保留命令前缀、但不含模拟 token。这个测试覆盖日志回显路径，不是完整凭据泄漏审计；参数、子进程 stdout / stderr 与历史日志仍需另查。`langgraph dockerfile` 主动写出 Dockerfile 的行为也未取消。<sup><a href="#cite-31">[31]</a></sup>
+
+**工程建议（未执行）**：在自己的工具执行器中用合成标记分别测试 stdin、参数、正常输出和异常输出的日志去向，同时检查子进程确实收到输入。修复一条回显路径不能替代日志留存、访问控制和其他泄漏面的检查。
+
 ### 8. 成本、排队与评测
 
 官方 Cursor 缓存优化、Claude 缓存定价更新与 OpenAI 模型价格都说明，成本应按完整任务轨迹计算。至少分别记录 uncached input、cached input、output、工具次数、重试、子 Agent、execution idle time 与每成功任务费用。<sup><a href="#cite-18">[18]</a></sup><sup><a href="#cite-19">[19]</a></sup>
@@ -187,6 +195,8 @@ GitHub 项目发现可用组合查询，例如 `agent in:readme language:python 
 
 ## 更新记录与证据边界
 
+- 2026-10-20：核查 LangGraph CLI 0.4.37 与 PR #9350 的 stdin 日志修复及合成 token 测试；未运行上游测试或部署 CLI，旧来源核查日期不变。
+
 - 2026-10-19：复核本次新增的 LangGraph 与 DeepSeek 官方来源；明确来源日期、核查日期和计费生效日期，旧产品与论文核查日期不变。未执行框架或计费实验。
 - 2026-10-18：核查 DeepSeek Search / Fetch 服务端集成的计费生效范围、成功判据与重试边界，补充工具费用分账建议；滚动文档没有独立确认的发布日期。
 - 2026-10-17：核查 10 月 16 日 LangGraph 1.2.16，补充无效 resume、已完成子任务复用及 reducer / pending-write 去重边界；阅读固定版本源码与上游测试，未本地复跑或验证真实外部副作用。
@@ -229,5 +239,7 @@ GitHub 项目发现可用组合查询，例如 `agent in:readme language:python 
 <li id="cite-27"><a href="https://github.com/langchain-ai/langgraph/pull/9314">LangGraph · exit 恢复不重复保存已有 pending writes，PR #9314</a><span class="source-meta">2026-10-15 合入，随 1.2.16 发布，commit 889a5ff16f8325113093d517dffd5471a943c760 · 2026-10-17 核查，2026-10-19 复核本次写入任务集合与并行中断测试 · 未复跑</span></li>
 <li id="cite-28"><a href="https://api-docs.deepseek.com/zh-cn/quick_start/pricing/">DeepSeek · 模型与价格</a><span class="source-meta">滚动官方文档，未确认独立发布日期 · 2026-10-18 核查，2026-10-19 复核 Search / Fetch 价格与服务端集成计费生效范围 · 生效时间为北京时间 2026-11-01 00:00 · 未调用或验证账单</span></li>
 <li id="cite-29"><a href="https://api-docs.deepseek.com/zh-cn/guides/search/">DeepSeek · 网页搜索与抓取</a><span class="source-meta">滚动官方文档，未确认独立发布日期 · 2026-10-18 核查，2026-10-19 复核成功判据、count、错误与重试规则 · 未运行接口或计费实验</span></li>
+<li id="cite-30"><a href="https://github.com/langchain-ai/langgraph/releases/tag/cli%3D%3D0.4.37">LangGraph CLI · 0.4.37 发布记录</a><span class="source-meta">2026-10-19 14:06:22 UTC 发布 · 2026-10-20 核查包含 PR #9350 · 未运行 CLI</span></li>
+<li id="cite-31"><a href="https://github.com/langchain-ai/langgraph/pull/9350">LangGraph · 停止在 verbose 日志打印子进程 stdin，PR #9350</a><span class="source-meta">2026-10-19 13:45:43 UTC 合入，commit 7b23a1084683c58a4c20f4e1290968536cc34e85 · 2026-10-20 读取 exec.py 与 test_exec.py diff、PR 说明 · 未复跑测试</span></li>
 </ol>
 </div></footer>

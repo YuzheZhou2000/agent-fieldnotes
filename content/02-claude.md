@@ -5,7 +5,7 @@
   "topic": "运行时与状态",
   "summary": "区分权威事件、模型工作集与产物状态，定位外部副作用的不确定区间，设计恢复与压缩验证。",
   "order": 2,
-  "updated": "2026-10-15",
+  "updated": "2026-10-20",
   "tags": ["事件日志", "恢复", "Compaction", "Anthropic"],
   "minutes": 21
 }
@@ -53,6 +53,16 @@ API 交付为 best effort，span 可能丢失，也可能重复送达；按 **tr
 **工程推导**：诊断轨迹不能充当完整计费账本或安全审计记录。用 Usage API 对账用量，权威事件日志与外部产物继续分别核验；证据缺失时保留 unknown，不能从未观察到的 span 推断行动没有发生。官方总览也要求使用 Usage API 检查未产生 spans 的请求用量。<sup><a href="#cite-14">[14]</a></sup>
 
 **练习建议（未执行）**：在隔离、脱敏的工具循环中，分别构造截断、丢失和重复交付；检查去重后能否关联请求、工具与产物，无法判断的结果标为 unknown。记录内容模式、SDK / schema 版本与导出覆盖，再进入[长任务评测](agent-evaluation.html)，避免只用已送达的 traces 代表所有试验。
+
+## 审批主体与终止状态也属于恢复合同
+
+Claude Code **v2.1.304（2026-10-19 发布）**提供了三个相邻但不能混同的边界案例；以下为 **2026-10-20** 对官方发布说明的核查，未审计实现或运行回归。<sup><a href="#cite-17">[17]</a></sup>
+
+- mod 的 `tool.check` 回答新增 `decider: "person"`：这类请求只能由权限对话框或宿主 callback 批准；无人可问时，带 mod 的理由拒绝。它约束批准渠道，不等于所有工具调用都强制人工审批。
+- 官方称修复了插件通过新建或重跑已完成子 Agent，让 headless 运行越过 `--max-turns`、Stop 或输入结束的问题。**工程推导**：父任务进入终止状态后，派生任务入口也应检查同一状态；只停止主循环不足以约束扩展插件。
+- 官方称修复了启用 `CLAUDE_CODE_TRANSCRIPT_LOCAL_GC` 时，磁盘在裁剪期间写满造成已存 transcript 消息丢失的问题。该修复不证明任意存储故障下日志都完整，也不提供外部副作用的事务保证。
+
+**回归建议（未执行）**：在隔离环境覆盖无人审批、三种终止信号下的新建 / 重跑子任务，以及裁剪中磁盘写满；分别核对拒绝理由、终止后实际工具调用数和重启后的事件序列。审批记录、终止状态与日志完整性应各有断言，不能只检查最终回复是否说“已停止”。
 
 ## 最新状态与近期变化
 
@@ -182,6 +192,8 @@ asyncio.run(main())
 
 ## 更新记录与证据边界
 
+- 2026-10-20：核查 Claude Code v2.1.304，补充审批渠道、派生任务终止与 transcript 裁剪故障边界；依据官方发布说明，未审计实现或执行故障注入。
+
 - 2026-10-15：核查 10 月 14 日 OpenTelemetry public beta 与当前 SDK / API 文档，补充轨迹覆盖、截断、交付与权威状态的边界；未运行 exporter、模型调用或相关评测。
 - 2026-10-13：补充状态权威范围、副作用确认空档和压缩保真度测试；保留旧 URL 与学习进度。新增恢复方案为工程推导，未执行故障注入。
 
@@ -209,5 +221,6 @@ asyncio.run(main())
 <li id="cite-14"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry">Claude Platform · OpenTelemetry 总览</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 SDK / API 范围、内容模式、截断、用量与保留边界 · 未实测</span></li>
 <li id="cite-15"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry/api">Claude Platform · API spans</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 best-effort / 重复交付、traceparent、sampling 与 AWS 例外 · 未配置 destination</span></li>
 <li id="cite-16"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry/sdk">Claude Platform · SDK spans</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 tracer provider / exporter、客户端工具与 beta schema 兼容性 · 未安装或运行示例</span></li>
+<li id="cite-17"><a href="https://github.com/anthropics/claude-code/releases/tag/v2.1.304">Claude Code · v2.1.304 发布说明</a><span class="source-meta">2026-10-19 21:34:39 UTC 发布 · 2026-10-20 核查 tool.check 审批渠道、headless 终止与本地 transcript GC 修复声明 · 未审计实现或实测</span></li>
 </ol>
 </div></footer>

@@ -5,7 +5,7 @@
   "topic": "评测与交付",
   "summary": "从 AgencyBench、AgentLAB、METR 与插件评测案例出发，区分交付质量、轨迹因果、可靠性及基础设施噪声。",
   "order": 8,
-  "updated": "2026-10-19",
+  "updated": "2026-10-20",
   "tags": ["AgencyBench", "AgentLAB", "METR", "可靠性"],
   "minutes": 19
 }
@@ -94,7 +94,21 @@ Google Cloud 于 **2026-10-16** 发布插件评测工程案例：一次 assistan
 
 可用同一任务比较“同批次派发”与“等待指导注入后再派发”，保持模型、预算、工具和 grader 不变，检查行动参数与最终产物。若前置调用失败或证据缺失，保留相应失败或 unknown，不把后续动作发生过就计为依赖满足。恢复后的任务和写入去重还需单独验证，见[运行时恢复案例](agent-engineering.html#h-63ca480a482b)。
 
+## MultiLangBench：用数据库文件固定跨语言判分接口
+
+OpenAI 于 **2026-10-19** 介绍 MultiLangBench：让模型用指定语言实现 SQLite 兼容引擎，以修改后的数据库文件作为跨语言共享的验收产物。这里关注评测合同，不沿用发布稿的模型排名。**2026-10-20** 读取公告及固定 README，未构建候选实现或复跑 benchmark。<sup><a href="#cite-9">[9]</a></sup>
+
+README 将 SQLite 3.40.1 的 TCL 测试转成 `initial_database`、`user_query`、`validation_query`：候选程序接收数据库路径与查询，修改数据库；参考 SQLite 在验收端执行验证查询，与预期输出精确比较。候选环境要求移除 SQLite 并禁网，验收端仍使用参考 SQLite，两者职责不能混淆。<sup><a href="#cite-10">[10]</a></sup>
+
+- **覆盖范围**：51k 原始测试中约 24k 被转换；默认采用名称哈希前缀为 `00`、`01`、`02` 的 272 项。运行全量须注明，子集通过率不能不加说明地与全量拼接。
+- **有效性与失败**：记录 `(API cost, test pass rate)`；错误语言或混合语言的实现不合格，单项不匹配、崩溃或超过 60 秒均失败。
+- **工程推导**：文件级接口把实现语言与 grader 解耦，但结果只证明所选测试下的数据库状态，不证明生产性能、并发事务或全部 SQL 语义。复现记录应固定候选 / 验收环境、套件子集与产物哈希，并单独核查语言合规。
+
+这些是公开基准设计及由此提出的验证建议，不是本仓库测量结果。10 月 19 日是公告与所读快照的日期，不能据此推断全部测试在当天编写。<sup><a href="#cite-10">[10]</a></sup>
+
 ## 更新记录与证据边界
+
+- 2026-10-20：核查 MultiLangBench 公告和固定 README，补充跨语言产物接口、272 项子集与判分有效性边界；未运行模型或 benchmark，既有研究核查日期不变。
 
 - 2026-10-19：复核新增 Google Cloud 案例及其发布日期、并发调用与指导注入机制；未运行对照实验，既有论文与生产 trace 文档核查日期不变。
 - 2026-10-17：依据 10 月 16 日 Google Cloud 插件评测案例，补充调用批次、指导注入与依赖关系的轨迹验收；对照实验为工程建议，未运行。
@@ -115,5 +129,7 @@ Google Cloud 于 **2026-10-16** 发布插件评测工程案例：一次 assistan
 <li id="cite-6"><a href="https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/">METR · Impact of modeling assumptions on time horizon results</a><span class="source-meta">2026-03-20 · 2026-10-13 核查正则化与结果敏感性 · 审阅较少的研究笔记</span></li>
 <li id="cite-7"><a href="https://arxiv.org/html/2602.16901v1">Jiang 等 · AgentLAB，v1</a><span class="source-meta">2026-02-18 · 2026-10-13 核查威胁分类、评测指标及表 3 · 未复跑</span></li>
 <li id="cite-8"><a href="https://cloud.google.com/blog/topics/developers-practitioners/four-eval-engineering-lessons">Google Cloud · Four evaluation engineering lessons learned from building agent plugins</a><span class="source-meta">2026-10-16 发布，未给日内时间 · 2026-10-17 读取全文，2026-10-19 复核并行 dispatch 与指导注入的因果案例 · 作者实践报告，未给固定 Harness 版本，未独立复现</span></li>
+<li id="cite-9"><a href="https://openai.com/index/low-resource-programming-languages/">OpenAI · Advancing coding in low-resource programming languages</a><span class="source-meta">2026-10-19 发布 · 2026-10-20 核查 MultiLangBench 产物与参考验收设计 · 厂商发布，未复测模型结果</span></li>
+<li id="cite-10"><a href="https://github.com/openai/MultiLangBench/blob/995755bffdba3da60ca367448a1606ba0e50573a/README.md">MultiLangBench · README 固定快照</a><span class="source-meta">commit 995755bffdba3da60ca367448a1606ba0e50573a，2026-10-19 · 2026-10-20 读取测试转换、子集、环境与判分合同 · 未运行测试套件</span></li>
 </ol>
 </div></footer>

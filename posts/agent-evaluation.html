@@ -25,7 +25,7 @@
 <div class="eyebrow">FIELDNOTE 08 / 评测与交付</div>
 <h1><span class="title-line">长任务评测：</span><span class="title-line">产物、轨迹与基础设施噪声</span></h1>
 <p class="lede">从 AgencyBench、AgentLAB、METR 与插件评测案例出发，区分交付质量、轨迹因果、可靠性及基础设施噪声。</p>
-<div class="article-meta"><time datetime="2026-10-19">2026-10-19</time><span>约 19 分钟</span><a href="../content/08-agent-evaluation.md" download>Markdown 源文 ↗</a></div>
+<div class="article-meta"><time datetime="2026-10-20">2026-10-20</time><span>约 19 分钟</span><a href="../content/08-agent-evaluation.md" download>Markdown 源文 ↗</a></div>
 <div class="tag-row"><span class="tag">AgencyBench</span><span class="tag">AgentLAB</span><span class="tag">METR</span><span class="tag">可靠性</span></div>
 </header>
 <div class="article-layout">
@@ -38,6 +38,7 @@
 <li><a href="#section-6">最小复现记录与判分合同</a></li>
 <li><a href="#h-9a11bf9073a3">生产 trace 进入评测前先说明缺失机制</a></li>
 <li><a href="#h-5b03df364565">并行轨迹必须保留调用批次与依赖关系</a></li>
+<li><a href="#h-4ff9e8d3d87d">MultiLangBench：用数据库文件固定跨语言判分接口</a></li>
 <li><a href="#section-7">更新记录与证据边界</a></li>
 <li><a href="#sources">来源与证据说明</a></li>
 </ul></div>
@@ -91,15 +92,41 @@
 <p>这属于作者报告的插件评测案例；文章未给该现象对应的固定 Harness 版本或修复提交。本文于 <strong>2026-10-17</strong> 读取正文，<strong>2026-10-19</strong> 复核，没有复现该任务，也不据此宣称所有 Skills 实现都有相同行为。</p>
 <p><strong>工程建议（未执行）</strong>：除时间戳与 call ID 外，保存 assistant turn、dispatch batch、任务依赖和指导实际注入上下文的时刻。判分“先读取操作约束，再调用工具”时，检查后续行动是否真正发生在约束可用之后；日志中的显示顺序、工具的最终完成顺序和模型的最终总结都不足以单独证明这一点。</p>
 <p>可用同一任务比较“同批次派发”与“等待指导注入后再派发”，保持模型、预算、工具和 grader 不变，检查行动参数与最终产物。若前置调用失败或证据缺失，保留相应失败或 unknown，不把后续动作发生过就计为依赖满足。恢复后的任务和写入去重还需单独验证，见<a href="agent-engineering.html#h-63ca480a482b">运行时恢复案例</a>。</p>
+<h2 id="h-4ff9e8d3d87d">MultiLangBench：用数据库文件固定跨语言判分接口</h2>
+<p>OpenAI 于 <strong>2026-10-19</strong> 介绍 MultiLangBench：让模型用指定语言实现 SQLite 兼容引擎，以修改后的数据库文件作为跨语言共享的验收产物。这里关注评测合同，不沿用发布稿的模型排名。<strong>2026-10-20</strong> 读取公告及固定 README，未构建候选实现或复跑 benchmark。<sup><a href="#cite-9">[9]</a></sup></p>
+<p>README 将 SQLite 3.40.1 的 TCL 测试转成 <code>initial_database</code>、<code>user_query</code>、<code>validation_query</code>：候选程序接收数据库路径与查询，修改数据库；参考 SQLite 在验收端执行验证查询，与预期输出精确比较。候选环境要求移除 SQLite 并禁网，验收端仍使用参考 SQLite，两者职责不能混淆。<sup><a href="#cite-10">[10]</a></sup></p>
+<ul>
+<li><strong>覆盖范围</strong>：51k 原始测试中约 24k 被转换；默认采用名称哈希前缀为 <code>00</code>、<code>01</code>、<code>02</code> 的 272 项。运行全量须注明，子集通过率不能不加说明地与全量拼接。</li>
+<li><strong>有效性与失败</strong>：记录 <code>(API cost, test pass rate)</code>；错误语言或混合语言的实现不合格，单项不匹配、崩溃或超过 60 秒均失败。</li>
+<li><strong>工程推导</strong>：文件级接口把实现语言与 grader 解耦，但结果只证明所选测试下的数据库状态，不证明生产性能、并发事务或全部 SQL 语义。复现记录应固定候选 / 验收环境、套件子集与产物哈希，并单独核查语言合规。</li>
+</ul>
+<p>这些是公开基准设计及由此提出的验证建议，不是本仓库测量结果。10 月 19 日是公告与所读快照的日期，不能据此推断全部测试在当天编写。<sup><a href="#cite-10">[10]</a></sup></p>
 <h2 id="section-7">更新记录与证据边界</h2>
 <ul>
-<li>2026-10-19：复核新增 Google Cloud 案例及其发布日期、并发调用与指导注入机制；未运行对照实验，既有论文与生产 trace 文档核查日期不变。</li>
-<li>2026-10-17：依据 10 月 16 日 Google Cloud 插件评测案例，补充调用批次、指导注入与依赖关系的轨迹验收；对照实验为工程建议，未运行。</li>
-<li>2026-10-15：新增生产 trace 进入评测前的覆盖、去重、截断、脱敏、版本和缺失机制检查；链接运行时篇的一手文档核查，未运行 exporter 或相关评测，原研究日期不变。</li>
-<li>2026-10-13：新增长任务交付、重复运行、基础设施干扰、时间跨度和长轨迹安全的评测合同。</li>
-<li>AgencyBench 使用 2026-04-23 v4；AgentLAB 使用 2026-02-18 v1；没有混用后续榜单。</li>
-<li>作者统计均注明实验对象；本文的复现 schema 与测试清单是工程建议，未运行模型或 benchmark。</li>
-<li>安全分数受攻击预算与防御配置影响；METR horizon 受任务分布和拟合假设影响。</li>
+<li>
+<p>2026-10-20：核查 MultiLangBench 公告和固定 README，补充跨语言产物接口、272 项子集与判分有效性边界；未运行模型或 benchmark，既有研究核查日期不变。</p>
+</li>
+<li>
+<p>2026-10-19：复核新增 Google Cloud 案例及其发布日期、并发调用与指导注入机制；未运行对照实验，既有论文与生产 trace 文档核查日期不变。</p>
+</li>
+<li>
+<p>2026-10-17：依据 10 月 16 日 Google Cloud 插件评测案例，补充调用批次、指导注入与依赖关系的轨迹验收；对照实验为工程建议，未运行。</p>
+</li>
+<li>
+<p>2026-10-15：新增生产 trace 进入评测前的覆盖、去重、截断、脱敏、版本和缺失机制检查；链接运行时篇的一手文档核查，未运行 exporter 或相关评测，原研究日期不变。</p>
+</li>
+<li>
+<p>2026-10-13：新增长任务交付、重复运行、基础设施干扰、时间跨度和长轨迹安全的评测合同。</p>
+</li>
+<li>
+<p>AgencyBench 使用 2026-04-23 v4；AgentLAB 使用 2026-02-18 v1；没有混用后续榜单。</p>
+</li>
+<li>
+<p>作者统计均注明实验对象；本文的复现 schema 与测试清单是工程建议，未运行模型或 benchmark。</p>
+</li>
+<li>
+<p>安全分数受攻击预算与防御配置影响；METR horizon 受任务分布和拟合假设影响。</p>
+</li>
 </ul>
 <footer><div class="sources">
 <h2 id="sources">来源与证据说明</h2>
@@ -112,13 +139,15 @@
 <li id="cite-6"><a href="https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/" target="_blank" rel="noopener noreferrer">METR · Impact of modeling assumptions on time horizon results</a><span class="source-meta">2026-03-20 · 2026-10-13 核查正则化与结果敏感性 · 审阅较少的研究笔记</span></li>
 <li id="cite-7"><a href="https://arxiv.org/html/2602.16901v1" target="_blank" rel="noopener noreferrer">Jiang 等 · AgentLAB，v1</a><span class="source-meta">2026-02-18 · 2026-10-13 核查威胁分类、评测指标及表 3 · 未复跑</span></li>
 <li id="cite-8"><a href="https://cloud.google.com/blog/topics/developers-practitioners/four-eval-engineering-lessons" target="_blank" rel="noopener noreferrer">Google Cloud · Four evaluation engineering lessons learned from building agent plugins</a><span class="source-meta">2026-10-16 发布，未给日内时间 · 2026-10-17 读取全文，2026-10-19 复核并行 dispatch 与指导注入的因果案例 · 作者实践报告，未给固定 Harness 版本，未独立复现</span></li>
+<li id="cite-9"><a href="https://openai.com/index/low-resource-programming-languages/" target="_blank" rel="noopener noreferrer">OpenAI · Advancing coding in low-resource programming languages</a><span class="source-meta">2026-10-19 发布 · 2026-10-20 核查 MultiLangBench 产物与参考验收设计 · 厂商发布，未复测模型结果</span></li>
+<li id="cite-10"><a href="https://github.com/openai/MultiLangBench/blob/995755bffdba3da60ca367448a1606ba0e50573a/README.md" target="_blank" rel="noopener noreferrer">MultiLangBench · README 固定快照</a><span class="source-meta">commit 995755bffdba3da60ca367448a1606ba0e50573a，2026-10-19 · 2026-10-20 读取测试转换、子集、环境与判分合同 · 未运行测试套件</span></li>
 </ol>
 </div></footer>
 </article>
 </div>
 <a class="next-article" href="agent-teams.html"><small>继续阅读 →</small><strong>Agent Teams：协作拓扑、状态边界与等预算评测</strong></a>
 </main>
-<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-19 · 正文与来源随 Git 维护</span></footer>
+<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-20 · 正文与来源随 Git 维护</span></footer>
 </div>
 </body>
 </html>

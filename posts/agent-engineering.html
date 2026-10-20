@@ -25,7 +25,7 @@
 <div class="eyebrow">FIELDNOTE 06 / 评测与交付</div>
 <h1><span class="title-line">Agent 系统设计：</span><span class="title-line">八个问题与可验证研究路径</span></h1>
 <p class="lede">用状态、工具、记忆、权限与验收约束组织系统设计，选择最小可证伪实验，再逐项增加复杂度。</p>
-<div class="article-meta"><time datetime="2026-10-19">2026-10-19</time><span>约 26 分钟</span><a href="../content/06-agent-engineering.md" download>Markdown 源文 ↗</a></div>
+<div class="article-meta"><time datetime="2026-10-20">2026-10-20</time><span>约 26 分钟</span><a href="../content/06-agent-engineering.md" download>Markdown 源文 ↗</a></div>
 <div class="tag-row"><span class="tag">系统设计</span><span class="tag">RLM</span><span class="tag">LangGraph</span><span class="tag">实验方法</span></div>
 </header>
 <div class="article-layout">
@@ -42,6 +42,7 @@
 <li><a href="#5-mcpskills-a2a">5. MCP、Skills 与 A2A</a></li>
 <li><a href="#6-agent">6. 多 Agent 的上下文与写入控制</a></li>
 <li><a href="#7">7. 权限、隔离与凭据</a></li>
+<li><a href="#h-d21aa8742fa9">子进程输入与诊断日志采用不同的数据边界</a></li>
 <li><a href="#8">8. 成本、排队与评测</a></li>
 </ul></li>
 <li><a href="#_3">四周学习计划</a></li>
@@ -208,6 +209,10 @@
 <p>官方 containment 材料区分模型行为、执行环境与外部内容。Muse 披露 Sentinel 出网审核，Claude 披露 OS sandbox 与 VM 路径；开源 Sandbox Runtime 可以阅读实际文件系统与网络策略。<sup><a href="#cite-4">[4]</a></sup><sup><a href="#cite-16">[16]</a></sup><sup><a href="#cite-17">[17]</a></sup></p>
 <p>不要将“网络默认拒绝”理解成“文件读取也默认拒绝”。本次 Sandbox Runtime README 明确默认 reads 可见范围较广，写入与网络采用不同默认规则。阅读策略优先级与平台差异，常常比复制一个配置示例更重要。<sup><a href="#cite-17">[17]</a></sup></p>
 <p>权限也属于产品体验。频繁确认可能增加打断，完全不看重要动作则会产生误操作。值得学习的方向是事先定义范围、生成可审查动作、结构性限制能力，并让用户在真正需要决策的位置参与。</p>
+<h4 id="h-d21aa8742fa9">子进程输入与诊断日志采用不同的数据边界</h4>
+<p>LangGraph CLI **0.4.37（2026-10-19 发布）**包含 PR #9350：<code>subp_exec</code> 的 verbose 输出不再回显标准输入，只打印命令与参数。标准输入可能承载凭据，安全地传给子进程不代表也应复制进 CI 日志或终端记录。该改动没有取消给子进程传入 stdin。<sup><a href="#cite-30">[30]</a></sup><sup><a href="#cite-31">[31]</a></sup></p>
+<p><strong>源码与测试阅读，非运行复现</strong>：2026-10-20 核查固定合入提交的两文件 diff。新增上游单元测试把模拟 token 经 stdin 送入读取输入的 Python 子进程，断言 verbose 输出保留命令前缀、但不含模拟 token。这个测试覆盖日志回显路径，不是完整凭据泄漏审计；参数、子进程 stdout / stderr 与历史日志仍需另查。<code>langgraph dockerfile</code> 主动写出 Dockerfile 的行为也未取消。<sup><a href="#cite-31">[31]</a></sup></p>
+<p><strong>工程建议（未执行）</strong>：在自己的工具执行器中用合成标记分别测试 stdin、参数、正常输出和异常输出的日志去向，同时检查子进程确实收到输入。修复一条回显路径不能替代日志留存、访问控制和其他泄漏面的检查。</p>
 <h3 id="8">8. 成本、排队与评测</h3>
 <p>官方 Cursor 缓存优化、Claude 缓存定价更新与 OpenAI 模型价格都说明，成本应按完整任务轨迹计算。至少分别记录 uncached input、cached input、output、工具次数、重试、子 Agent、execution idle time 与每成功任务费用。<sup><a href="#cite-18">[18]</a></sup><sup><a href="#cite-19">[19]</a></sup></p>
 <p>DeepSeek 的 Search / Fetch 提供了一个工具费用与 token 费用分账的例子。官方滚动文档在 <strong>2026-10-18 核查、2026-10-19 复核</strong>时说明：通过 DeepSeek API 在 DeepSeek Harness、Claude Code、Codex 中触发的服务端 Search / Fetch 调用，目前未计费，将于<strong>北京时间 2026-11-01 00:00</strong> 起收费；两类接口各按每 1,000 次成功请求 <strong>5 元人民币</strong>计费。独立 Search / Fetch API 已列出按次收费规则，不能把 11 月 1 日外推成所有搜索与抓取 API 首次收费的日期；模型 token 费用另计。文档没有可独立确认的发布日期，核查日与生效日须分开。<sup><a href="#cite-28">[28]</a></sup><sup><a href="#cite-29">[29]</a></sup></p>
@@ -330,6 +335,9 @@
 <h2 id="_7">更新记录与证据边界</h2>
 <ul>
 <li>
+<p>2026-10-20：核查 LangGraph CLI 0.4.37 与 PR #9350 的 stdin 日志修复及合成 token 测试；未运行上游测试或部署 CLI，旧来源核查日期不变。</p>
+</li>
+<li>
 <p>2026-10-19：复核本次新增的 LangGraph 与 DeepSeek 官方来源；明确来源日期、核查日期和计费生效日期，旧产品与论文核查日期不变。未执行框架或计费实验。</p>
 </li>
 <li>
@@ -386,13 +394,15 @@
 <li id="cite-27"><a href="https://github.com/langchain-ai/langgraph/pull/9314" target="_blank" rel="noopener noreferrer">LangGraph · exit 恢复不重复保存已有 pending writes，PR #9314</a><span class="source-meta">2026-10-15 合入，随 1.2.16 发布，commit 889a5ff16f8325113093d517dffd5471a943c760 · 2026-10-17 核查，2026-10-19 复核本次写入任务集合与并行中断测试 · 未复跑</span></li>
 <li id="cite-28"><a href="https://api-docs.deepseek.com/zh-cn/quick_start/pricing/" target="_blank" rel="noopener noreferrer">DeepSeek · 模型与价格</a><span class="source-meta">滚动官方文档，未确认独立发布日期 · 2026-10-18 核查，2026-10-19 复核 Search / Fetch 价格与服务端集成计费生效范围 · 生效时间为北京时间 2026-11-01 00:00 · 未调用或验证账单</span></li>
 <li id="cite-29"><a href="https://api-docs.deepseek.com/zh-cn/guides/search/" target="_blank" rel="noopener noreferrer">DeepSeek · 网页搜索与抓取</a><span class="source-meta">滚动官方文档，未确认独立发布日期 · 2026-10-18 核查，2026-10-19 复核成功判据、count、错误与重试规则 · 未运行接口或计费实验</span></li>
+<li id="cite-30"><a href="https://github.com/langchain-ai/langgraph/releases/tag/cli%3D%3D0.4.37" target="_blank" rel="noopener noreferrer">LangGraph CLI · 0.4.37 发布记录</a><span class="source-meta">2026-10-19 14:06:22 UTC 发布 · 2026-10-20 核查包含 PR #9350 · 未运行 CLI</span></li>
+<li id="cite-31"><a href="https://github.com/langchain-ai/langgraph/pull/9350" target="_blank" rel="noopener noreferrer">LangGraph · 停止在 verbose 日志打印子进程 stdin，PR #9350</a><span class="source-meta">2026-10-19 13:45:43 UTC 合入，commit 7b23a1084683c58a4c20f4e1290968536cc34e85 · 2026-10-20 读取 exec.py 与 test_exec.py diff、PR 说明 · 未复跑测试</span></li>
 </ol>
 </div></footer>
 </article>
 </div>
 <a class="next-article" href="agent-memory.html"><small>继续阅读 →</small><strong>Agent 记忆进入策略层：文件操作与异构路由</strong></a>
 </main>
-<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-19 · 正文与来源随 Git 维护</span></footer>
+<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-20 · 正文与来源随 Git 维护</span></footer>
 </div>
 </body>
 </html>
