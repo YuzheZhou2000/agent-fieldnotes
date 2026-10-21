@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "node scripts/build.mjs --check && node --check assets/site.js && node --check assets/search-index.js && node --check assets/loop-machine.js && node --check assets/loop-lab.js && python3 scripts/check_site.py && npm test",
+    "check": "node scripts/build.mjs --check && node --check assets/site.js && node --check assets/search-index.js && node --check assets/loop-machine.js && node --check assets/loop-lab.js && python3 scripts/check_site.py && npm test && python3 -m unittest discover -s demos/team-agent-lab/tests -v",
     "test": "node --test tests/*.test.mjs"
   },
   "engines": {"node": ">=20"},

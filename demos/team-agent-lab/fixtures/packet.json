@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "task": "评审虚构的 Helios v1.1 发布包：能否进入只读 shadow，为什么不能直接执行生产写操作？产出有证据 ID 的评审单，不执行部署。",
+  "documents": {
+    "release": [
+      {"id": "R1", "text": "Helios v1.1 adds up to three retries for ticket registration."},
+      {"id": "R2", "text": "Durable deduplication across process restarts is NOT IMPLEMENTED."},
+      {"id": "R3", "text": "Stop prevents new dispatches; it cannot retract already sent requests."}
+    ],
+    "tests": [
+      {"id": "T1", "text": "Twelve read-only parsing tests passed in a synthetic test environment."},
+      {"id": "T2", "text": "Write-success/response-loss recovery has NOT been tested."},
+      {"id": "T3", "text": "No production traffic or real customer messages were used."}
+    ],
+    "policy": [
+      {"id": "P1", "text": "Production writes require durable idempotency AND a passing response-loss recovery test."},
+      {"id": "P2", "text": "Read-only shadow is permitted if no production write tools or credentials are exposed."},
+      {"id": "P3", "text": "A human must approve the exact report hash before its local publication."}
+    ]
+  }
+}

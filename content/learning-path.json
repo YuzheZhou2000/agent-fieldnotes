@@ -60,12 +60,12 @@
       "id": "collaboration",
       "title": "协作、分工与共享产物",
       "coverage": "available",
-      "kind": "已有专题入口",
+      "kind": "已有综述与本地实战",
       "question": "多一个执行者购买了什么可测收益？",
       "outcome": "能区分任务依赖图与通信拓扑，并设计共享状态和单写者边界。",
-      "posts": ["agent-teams", "team-agent-products"],
-      "exercise": "先画单 Agent 基线，再说明哪一个瓶颈需要并行。",
-      "next": "待深化：调度策略实现、通信消融和团队取消语义。"
+      "posts": ["team-agent-lab", "agent-teams", "team-agent-products"],
+      "exercise": "运行本地 Python demo，对比 single / sequential / parallel，再注入 conflict，核对定向反馈和有界返工。",
+      "next": "待深化：自由同伴消息、持久 mailbox、动态任务图与真实模型等预算评测。"
     },
     {
       "id": "evaluation",

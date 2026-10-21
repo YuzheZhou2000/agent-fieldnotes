@@ -1,0 +1,56 @@
+{
+  "recorded_on": "2026-10-21",
+  "python": "3.9.6",
+  "kind": "deterministic mock orchestration; synthetic 40ms per backend request; NOT model performance",
+  "real_model_tested": false,
+  "runs": [
+    {
+      "version": "0.1.0",
+      "mode": "single",
+      "backend": "mock",
+      "status": "awaiting_approval",
+      "validated": true,
+      "error": null,
+      "fixture_sha256": "4e0e13475c6ea64271cafcb2c9c0f6976eef48189fb6e49524f07a8ddafc8fc3",
+      "calls_reserved": 5,
+      "max_calls": 8,
+      "peak_active_calls": 1,
+      "elapsed_ms": 210.566,
+      "synthetic_delay_ms": 40,
+      "reported_usage": null,
+      "usage_complete": false
+    },
+    {
+      "version": "0.1.0",
+      "mode": "sequential",
+      "backend": "mock",
+      "status": "awaiting_approval",
+      "validated": true,
+      "error": null,
+      "fixture_sha256": "4e0e13475c6ea64271cafcb2c9c0f6976eef48189fb6e49524f07a8ddafc8fc3",
+      "calls_reserved": 5,
+      "max_calls": 8,
+      "peak_active_calls": 1,
+      "elapsed_ms": 212.643,
+      "synthetic_delay_ms": 40,
+      "reported_usage": null,
+      "usage_complete": false
+    },
+    {
+      "version": "0.1.0",
+      "mode": "parallel",
+      "backend": "mock",
+      "status": "awaiting_approval",
+      "validated": true,
+      "error": null,
+      "fixture_sha256": "4e0e13475c6ea64271cafcb2c9c0f6976eef48189fb6e49524f07a8ddafc8fc3",
+      "calls_reserved": 5,
+      "max_calls": 8,
+      "peak_active_calls": 2,
+      "elapsed_ms": 169.599,
+      "synthetic_delay_ms": 40,
+      "reported_usage": null,
+      "usage_complete": false
+    }
+  ]
+}

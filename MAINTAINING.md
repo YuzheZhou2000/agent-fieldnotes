@@ -32,6 +32,8 @@ npm run check
 
 执行循环实验室的规则在 `assets/loop-machine.js`，界面在 `assets/loop-lab.js`；纯客户端，不调用模型或外部接口，不持久化实验。`npm test` 验证预算、审批、未知副作用、取消、重试与所有配置的有界终止，并包含在 `npm run check`。修改规则时同步页面成本、假设与练习；不要将教学单位当成价格或真实模型测量。
 
+`demos/team-agent-lab/` 是 Python 3.9+ 标准库本地实战工程，默认 mock；`npm run check` 包含其 unittest，HTTP 协议测试只使用本机回环 stub。改动要同步 README、教程、fixture 合同与测试；模拟延迟、协议 stub 和真实模型实验分开记录。运行产物在忽略的 `runs/`，不要提交用户的本地日志或凭据。可选 local 模式不得默认下载模型、放开任意文件 / shell 或使用云 API。
+
 `npm run check` 检查生成结果是否过期、JavaScript 语法、本地链接、锚点、唯一 ID、分类与元数据一致性、旧锚点和离线资源。修改交互或布局后，还应在浏览器验证分类与多词全文搜索、空结果、旧学习进度、标记/撤销、主题、代码复制，以及桌面/手机宽度。建议同时通过 `file://` 检查离线阅读。
 
 ## 兼容策略

@@ -122,6 +122,12 @@ h1 em { color: var(--clay); font-weight: 500; }
 .learning-callout h2 { font-size: 26px; font-weight: 500; margin: 8px 0 12px; }
 .learning-callout p { font-size: 13px; color: var(--gray-700); margin: 0; }
 .learning-callout > div:last-child { align-self: center; display: grid; gap: 12px; font-size: 13px; }
+.team-flow { display: grid; gap: 8px; margin: 28px 0; }
+.team-flow-box { padding: 16px; border: 1px solid var(--gray-300); border-radius: 7px; background: var(--paper); font-size: 13px; }
+.team-flow-box p { margin: 5px 0 0; font-size: 12px; color: var(--gray-700); }
+.team-flow-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.team-flow-arrow { text-align: center; font: 11px var(--mono); color: var(--clay); }
+.team-flow figcaption { font-size: 11px; color: var(--gray-500); padding-top: 8px; }
 .path-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .path-card { border-top: 2px solid var(--oat); padding: 16px 0 0; min-width: 0; }
 .path-card > span { font-family: var(--mono); color: var(--olive); font-size: 12px; }

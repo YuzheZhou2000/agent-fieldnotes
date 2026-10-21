@@ -19,4 +19,6 @@ python3 -m http.server 8000
 
 学习入口：[全流程地图](learn.html) · [执行循环基础](posts/agent-loop.html) · [上下文与检索](posts/context-retrieval.html) · [服务化与故障处置](posts/agent-operations.html) · [执行循环实验室](tools/loop-lab.html)。地图区分已有专题与待补方向；工具是确定性教学模拟，不调用模型或外部服务。
 
-文章源文在 `content/`；路线数据在 `content/learning-path.json`，页面在 `templates/`。`npm run check` 同时运行无依赖的状态机边界测试。生成约定、来源规范及旧链接兼容策略见 [MAINTAINING.md](MAINTAINING.md)。
+本地实战：[Team Agent 教程](posts/team-agent-lab.html) · [Python 工程与命令](demos/team-agent-lab/README.md)。默认离线 mock，无第三方依赖；可选用户自行启动的本地模型端点，不下载模型或调用付费服务。
+
+文章源文在 `content/`；路线数据在 `content/learning-path.json`，页面在 `templates/`。`npm run check` 同时运行状态机与 Python demo 的测试（协议测试仅绑定本机回环端口）。生成约定、来源规范及旧链接兼容策略见 [MAINTAINING.md](MAINTAINING.md)。
