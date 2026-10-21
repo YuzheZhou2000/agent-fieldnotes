@@ -17,6 +17,6 @@ python3 -m http.server 8000
 
 在浏览器打开 `http://localhost:8000`。发布所需静态文件已提交，Pages 不需要运行 Node.js。
 
-学习入口：[全流程地图](learn.html) · [执行循环基础](posts/agent-loop.html) · [上下文与检索](posts/context-retrieval.html) · [执行循环实验室](tools/loop-lab.html)。地图区分已有专题与待补方向；工具是确定性教学模拟，不调用模型或外部服务。
+学习入口：[全流程地图](learn.html) · [执行循环基础](posts/agent-loop.html) · [上下文与检索](posts/context-retrieval.html) · [服务化与故障处置](posts/agent-operations.html) · [执行循环实验室](tools/loop-lab.html)。地图区分已有专题与待补方向；工具是确定性教学模拟，不调用模型或外部服务。
 
 文章源文在 `content/`；路线数据在 `content/learning-path.json`，页面在 `templates/`。`npm run check` 同时运行无依赖的状态机边界测试。生成约定、来源规范及旧链接兼容策略见 [MAINTAINING.md](MAINTAINING.md)。
