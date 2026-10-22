@@ -14,6 +14,8 @@
 
 作者实验、独立复现、厂商披露与工程推导分别标注。百分比与百分点、延迟与费用、单 episode 与跨任务状态不能混用。跨模型、Harness、任务集、资源或 grader 的分数不能拼成统一排名。未执行的训练、模型请求和建议实验不得标成已复现。
 
+有实质更新时，可随同发布提交 `research/YYYY-MM-DD.md`，记录基线、来源日期、采用理由、未采用线索与读取限制，供下一次去重；无重要增量时不为核查记录单独制造提交。
+
 ## 生成与检查
 
 `content/*.md` 使用 JSON frontmatter：`slug`、`title`、`topic`、`summary`、`order`、`updated`、`tags`、`minutes`。`order` 是稳定笔记编号，`minutes` 是阅读时间估计；来源列表使用 `cite-N`，引用指向同一篇的来源 ID。

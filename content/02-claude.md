@@ -3,11 +3,11 @@
   "slug": "claude",
   "title": "长任务状态：事件日志、压缩与崩溃恢复",
   "topic": "运行时与状态",
-  "summary": "区分权威事件、模型工作集与产物状态，定位外部副作用的不确定区间，设计恢复与压缩验证。",
+  "summary": "区分事件、工作集与产物，结合 Claude API 版本迁移和 HTTP MCP 重试更新，检查历史回放、压缩与重复副作用。",
   "order": 2,
-  "updated": "2026-10-20",
+  "updated": "2026-10-22",
   "tags": ["事件日志", "恢复", "Compaction", "Anthropic"],
-  "minutes": 21
+  "minutes": 26
 }
 ---
 
@@ -63,6 +63,45 @@ Claude Code **v2.1.304（2026-10-19 发布）**提供了三个相邻但不能混
 - 官方称修复了启用 `CLAUDE_CODE_TRANSCRIPT_LOCAL_GC` 时，磁盘在裁剪期间写满造成已存 transcript 消息丢失的问题。该修复不证明任意存储故障下日志都完整，也不提供外部副作用的事务保证。
 
 **回归建议（未执行）**：在隔离环境覆盖无人审批、三种终止信号下的新建 / 重跑子任务，以及裁剪中磁盘写满；分别核对拒绝理由、终止后实际工具调用数和重启后的事件序列。审批记录、终止状态与日志完整性应各有断言，不能只检查最终回复是否说“已停止”。
+
+## API 版本迁移也是状态恢复的一部分
+
+Anthropic 于 **2026-10-21** 发布 API 版本 `2026-10-21`；首批默认发送新版本的客户端包括 Python **2.0.0**、TypeScript **1.0.0** 和 `ant` CLI **2.0.0**。这是 Client SDK / HTTP 协议的迁移，不能与 Claude Agent SDK 或 Claude Code 的版本号互换。以下为 **2026-10-22** 对官方文档的核查，没有调用新旧 API、安装这些版本或执行网关实验。<sup><a href="#cite-18">[18]</a></sup>
+
+长任务的日志仍在，不代表升级后的请求编码器能直接重放它。新 API 对 Messages、token counting 和按新版本创建的 Message Batch 都有影响：<sup><a href="#cite-19">[19]</a></sup>
+
+| 既有请求或历史 | 新合同 | 迁移时检查什么 |
+|---|---|---|
+| 发送 `temperature`、`top_p` 或 `top_k` | 即使填默认值也返回 400 | 删掉参数；依赖旧版非默认采样的任务另做质量回归，不能宣称删除后效果等价 |
+| `assistant` 消息直接放 `document` | 返回 400；嵌在工具结果中的文档不属此禁例 | 按角色检查历史装配，不批量删除所有文档 |
+| `user` 的 text 带非空 `citations`，包括 search result 内 | 返回 400；assistant 引用及文档的引用启用配置仍可用 | 清理不合法字段，保留来源关系与合法引用能力 |
+
+**SDK 升级还会改变请求之外的行为。** 新版以 `Authorization: Bearer` 发送 API key；Claude API 仍接受 `X-Api-Key`，但只识别旧头的代理需要迁移。平台客户端有自己的规则，例如 Python `AnthropicFoundry` 仍使用 `x-api-key`。普通 Python 客户端只持有一份凭据：构造时同时传 key 与 token 会报错；未显式传入时，环境 key 的优先级高于环境 token。应以实际客户端的合同核查身份选择，而非把所有云入口当同一实现。<sup><a href="#cite-19">[19]</a></sup>
+
+TypeScript / Ruby tool runner 移除了客户端 compaction，迁移指南给出服务端压缩替代路径；TypeScript 的旧 `compactionControl` 已从 **0.129.0** 起抛错，不能把全部行为都算作此次 1.0 才开始。Python `MessageParam` 变为按 role 区分的 union，不能再把该名字当构造器调用。指南还列出 Admin / Analytics 字段、旧接口及许可证变化；本节只选长任务集成最相关的部分，不是完整迁移清单。<sup><a href="#cite-19">[19]</a></sup>
+
+旧 API `2023-06-01` 仍列在版本历史中，迁移指南也明确允许依赖旧采样参数的请求暂留旧版。Amazon Bedrock 的新版本仅适用于 **Claude 4.7 及以后模型**，不能只升级 SDK 就假定旧模型兼容。固定 API 版本也不代表输出永不变化：版本合同允许新增输出值和事件变体，解码器需要处理未知分支。<sup><a href="#cite-19">[19]</a></sup><sup><a href="#cite-20">[20]</a></sup>
+
+**工程建议，尚未执行这些集成测试**：把 SDK 锁文件、API 版本、模型、消息编码器、鉴权代理和压缩策略作为一个迁移发布包。保留原日志，在新版本副本上做转换，避免破坏旧运行的恢复条件。
+
+| 回归样例 | 要分别核对的结果 |
+|---|---|
+| 新任务与旧历史回放 | 请求是否合法，证据和工具结果是否仍对应，不能只测空白对话 |
+| 直接 API 与实际网关 | 出站头、选中凭据及上游身份；使用脱敏记录，不把 token 写入日志 |
+| 长上下文与待决工具 | 压缩由谁触发，恢复后调用 / 结果 / 审批是否成对；更换压缩位置不等于已证明保真 |
+| 升级失败与回退 | 能否用原发布包恢复旧运行，400 是否被归为配置错误而非无界重试 |
+
+表中是应用验收目标，不是厂商保证。新接口接受请求与旧任务仍然正确，是两个不同的验收层。
+
+## HTTP MCP 断线：重试资格与结果确认分开
+
+Claude Code **v2.1.307 于 2026-10-21 22:17:02 UTC 发布**，晚于本站 10 月 21 日教程核查的 v2.1.306。官方称修复了 HTTP MCP 连接在调用中断开时重复派发工具的问题，现仅重试只读或幂等工具。这是发布说明证据，**未审计实现或复跑断线实验**；不能外推到所有传输、SDK 或工具后端。<sup><a href="#cite-21">[21]</a></sup>
+
+`readOnlyHint` / `idempotentHint` 是 MCP 对工具行为的声明。协议明确要求，不应依赖不可信服务器的 annotations 作工具决策；一个写工具自称幂等，不证明它真的重复无副作用。<sup><a href="#cite-22">[22]</a></sup> **工程推导**：连接断开只说明客户端没有完整结果。对生产写入仍需稳定业务操作 ID、服务端去重与状态查询；无法确认时保留 unknown，避免把“可重试声明”当成 exactly-once 保证。操作与尝试的账本见[服务化与故障处置](agent-operations.html)。
+
+同版新增 `claude_code.safety_event` OpenTelemetry 事件，覆盖工具调用被权限规则、auto mode、安全检查、hook 或 sandbox 停止、提示或退回的情况。它补充控制路径的诊断；不能把一条事件等同于业务副作用已回滚，也不能从未收到事件推断行动被允许。本文前述遥测覆盖与权威账本的区别仍然适用。<sup><a href="#cite-21">[21]</a></sup>
+
+**建议实验，未执行**：在隔离的 HTTP MCP 服务中，让“写入已提交”后断开回执；分别检查可信只读工具、经验证幂等工具和普通写工具的派发数、外部状态及恢复路径。另构造权限拒绝与无人审批，关联安全事件、调用 ID 和账本，分别断言停止与结果确认，不能只看最终文字说“失败”。
 
 ## 最新状态与近期变化
 
@@ -192,6 +231,8 @@ asyncio.run(main())
 
 ## 更新记录与证据边界
 
+- 2026-10-22：核查 10 月 21 日 API 迁移与 Claude Code v2.1.307，补充版本发布包、历史回放 / 鉴权 / 压缩回归，以及 HTTP MCP 重试资格和安全事件边界；依据官方文档与发布说明，未安装新版 SDK、调用 API、审计 Claude Code 实现或实测 MCP。全站核查范围与未采用线索见 [GitHub 核查记录](https://github.com/YuzheZhou2000/agent-fieldnotes/blob/main/research/2026-10-22.md)。
+
 - 2026-10-20：核查 Claude Code v2.1.304，补充审批渠道、派生任务终止与 transcript 裁剪故障边界；依据官方发布说明，未审计实现或执行故障注入。
 
 - 2026-10-15：核查 10 月 14 日 OpenTelemetry public beta 与当前 SDK / API 文档，补充轨迹覆盖、截断、交付与权威状态的边界；未运行 exporter、模型调用或相关评测。
@@ -222,5 +263,10 @@ asyncio.run(main())
 <li id="cite-15"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry/api">Claude Platform · API spans</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 best-effort / 重复交付、traceparent、sampling 与 AWS 例外 · 未配置 destination</span></li>
 <li id="cite-16"><a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry/sdk">Claude Platform · SDK spans</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-15 核查 tracer provider / exporter、客户端工具与 beta schema 兼容性 · 未安装或运行示例</span></li>
 <li id="cite-17"><a href="https://github.com/anthropics/claude-code/releases/tag/v2.1.304">Claude Code · v2.1.304 发布说明</a><span class="source-meta">2026-10-19 21:34:39 UTC 发布 · 2026-10-20 核查 tool.check 审批渠道、headless 终止与本地 transcript GC 修复声明 · 未审计实现或实测</span></li>
+<li id="cite-18"><a href="https://platform.claude.com/docs/en/release-notes/overview">Claude Platform · Release notes，2026-10-21 条目</a><span class="source-meta">官方条目仅给发布日期，无时分 · 2026-10-22 核查 API 版本与首批默认新版本的 SDK / ant CLI · 不将核查日当发布日期</span></li>
+<li id="cite-19"><a href="https://platform.claude.com/docs/en/api/migration-2026-10-21">Claude Platform · Migrating to API version 2026-10-21</a><span class="source-meta">按 API 日期命名的滚动官方指南，无独立发布时间 · 2026-10-22 阅读迁移步骤、Messages、类型、鉴权、凭据、压缩及云渠道例外 · 本节为选择性摘要，未执行迁移</span></li>
+<li id="cite-20"><a href="https://platform.claude.com/docs/en/api/versioning">Claude Platform · Versions</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-22 阅读版本历史、输入 / 输出兼容及允许新增事件的边界 · 未验证托管渠道</span></li>
+<li id="cite-21"><a href="https://github.com/anthropics/claude-code/releases/tag/v2.1.307">Claude Code · v2.1.307 发布说明</a><span class="source-meta">2026-10-21 22:17:02 UTC 发布 · 2026-10-22 经 GitHub 发布记录核查 HTTP MCP 重试限制与 safety_event 事件 · 厂商修复声明，未审计实现或独立实测</span></li>
+<li id="cite-22"><a href="https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations">MCP · ToolAnnotations，2025-06-18 固定协议版本</a><span class="source-meta">历史协议版本，不称作当前新发布 · 2026-10-22 阅读只读 / 幂等声明及不可信服务器警告 · 用于解释边界，不证明 Claude Code 内部如何解析字段</span></li>
 </ol>
 </div></footer>
