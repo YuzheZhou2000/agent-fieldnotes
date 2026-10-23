@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-22",
+  "updated": "2026-10-23",
   "stages": [
     {
       "id": "loop",
@@ -74,8 +74,8 @@
       "kind": "已有专题入口",
       "question": "怎样证明产物正确，而非仅有一段成功回复？",
       "outcome": "能固定任务、预算、环境和 grader，区分轨迹诊断与最终交付。",
-      "posts": ["agent-evaluation", "coding-agents", "agent-interview-prep"],
-      "exercise": "为一个任务写出成功、失败、无答案和环境异常的判分规则。",
+      "posts": ["agent-evaluation", "agent-proof-contracts", "coding-agents", "agent-interview-prep"],
+      "exercise": "为一个任务写出成功、失败、无答案和环境异常的判分规则；再列出证明对象、性质、输入边界与未覆盖承诺。",
       "next": "待深化：评测集生命周期、线上回归和灰度发布的闭环。"
     },
     {

@@ -5,9 +5,9 @@
   "topic": "运行时与状态",
   "summary": "区分事件、工作集与产物，结合 Claude API 版本迁移和 HTTP MCP 重试更新，检查历史回放、压缩与重复副作用。",
   "order": 2,
-  "updated": "2026-10-22",
+  "updated": "2026-10-23",
   "tags": ["事件日志", "恢复", "Compaction", "Anthropic"],
-  "minutes": 26
+  "minutes": 28
 }
 ---
 
@@ -102,6 +102,14 @@ Claude Code **v2.1.307 于 2026-10-21 22:17:02 UTC 发布**，晚于本站 10 �
 同版新增 `claude_code.safety_event` OpenTelemetry 事件，覆盖工具调用被权限规则、auto mode、安全检查、hook 或 sandbox 停止、提示或退回的情况。它补充控制路径的诊断；不能把一条事件等同于业务副作用已回滚，也不能从未收到事件推断行动被允许。本文前述遥测覆盖与权威账本的区别仍然适用。<sup><a href="#cite-21">[21]</a></sup>
 
 **建议实验，未执行**：在隔离的 HTTP MCP 服务中，让“写入已提交”后断开回执；分别检查可信只读工具、经验证幂等工具和普通写工具的派发数、外部状态及恢复路径。另构造权限拒绝与无人审批，关联安全事件、调用 ID 和账本，分别断言停止与结果确认，不能只看最终文字说“失败”。
+
+## 恢复运行环境时，也要恢复权限合同
+
+本节于 **2026-10-23** 窄范围核查；原有各节来源日期保持不变。Claude Code v2.1.309 发布于 **2026-10-22 22:18:57 UTC**。本次发布说明列出的修复包括：macOS / Linux 的 shell 启动文件在 sandbox 外执行，macOS 经符号链接访问真实路径时 `denyWrite` 未生效，sandbox 命令和自动接受的编辑可修改 `--mcp-config` 指定文件，print / SDK 会话中的已禁用 MCP 被权限提示重连，以及部分 Windows PowerShell hook 未能阻断。自托管会话迁往新 runner 后，还会把被中断的工具调用以结果未知呈现给模型。以上均是特定路径的厂商修复声明。<sup><a href="#cite-23">[23]</a></sup>
+
+**工程推导**：恢复不能只重建 prompt 和工作目录。运行时还需要确认实际的权限配置、MCP 启用状态、hook 可用性及未完成调用。结果未知仍应先核查真实外部状态，不能因为换了 runner 就自动重试写入。
+
+**建议回归，未执行**：使用无敏感数据的隔离 fixture，分别检查冷启动、恢复、后台任务与 runner 切换后的权限一致性；记录有效配置和拒绝结果。不能把版本说明当成已复测全部安全属性。本次未安装 Claude Code、审计实现或运行绕过测试。
 
 ## 最新状态与近期变化
 
@@ -231,6 +239,8 @@ asyncio.run(main())
 
 ## 更新记录与证据边界
 
+- 2026-10-23：窄范围核查 Claude Code v2.1.309 的权限边界与 runner 迁移提示；保留旧来源日期，未安装产品、审计实现或复测安全修复。与本次新增专题及发布检查对应的范围见 [GitHub 核查记录](https://github.com/YuzheZhou2000/agent-fieldnotes/blob/main/research/2026-10-23.md)。
+
 - 2026-10-22：核查 10 月 21 日 API 迁移与 Claude Code v2.1.307，补充版本发布包、历史回放 / 鉴权 / 压缩回归，以及 HTTP MCP 重试资格和安全事件边界；依据官方文档与发布说明，未安装新版 SDK、调用 API、审计 Claude Code 实现或实测 MCP。全站核查范围与未采用线索见 [GitHub 核查记录](https://github.com/YuzheZhou2000/agent-fieldnotes/blob/main/research/2026-10-22.md)。
 
 - 2026-10-20：核查 Claude Code v2.1.304，补充审批渠道、派生任务终止与 transcript 裁剪故障边界；依据官方发布说明，未审计实现或执行故障注入。
@@ -268,5 +278,6 @@ asyncio.run(main())
 <li id="cite-20"><a href="https://platform.claude.com/docs/en/api/versioning">Claude Platform · Versions</a><span class="source-meta">滚动官方文档，无独立发布日期 · 2026-10-22 阅读版本历史、输入 / 输出兼容及允许新增事件的边界 · 未验证托管渠道</span></li>
 <li id="cite-21"><a href="https://github.com/anthropics/claude-code/releases/tag/v2.1.307">Claude Code · v2.1.307 发布说明</a><span class="source-meta">2026-10-21 22:17:02 UTC 发布 · 2026-10-22 经 GitHub 发布记录核查 HTTP MCP 重试限制与 safety_event 事件 · 厂商修复声明，未审计实现或独立实测</span></li>
 <li id="cite-22"><a href="https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations">MCP · ToolAnnotations，2025-06-18 固定协议版本</a><span class="source-meta">历史协议版本，不称作当前新发布 · 2026-10-22 阅读只读 / 幂等声明及不可信服务器警告 · 用于解释边界，不证明 Claude Code 内部如何解析字段</span></li>
+<li id="cite-23"><a href="https://github.com/anthropics/claude-code/releases/tag/v2.1.309">Claude Code · v2.1.309</a><span class="source-meta">2026-10-22 22:18:57 UTC 发布 · 2026-10-23 核查 sandbox / MCP / hook 权限修复与自托管 runner 迁移的 outcome unknown 提示 · 厂商发行说明，未安装、审计或复测安全修复</span></li>
 </ol>
 </div></footer>
