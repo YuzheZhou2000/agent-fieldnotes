@@ -5,9 +5,9 @@
   "topic": "运行时与状态",
   "summary": "定义模型、会话与执行环境的接口合同，以审批、压缩和持久化更新检验长任务恢复的边界。",
   "order": 1,
-  "updated": "2026-10-16",
+  "updated": "2026-10-24",
   "tags": ["工具循环", "Harness", "OpenAI", "Codex"],
-  "minutes": 21
+  "minutes": 25
 }
 ---
 
@@ -99,6 +99,24 @@ Redis 补丁为直接使用的 `RedisSession` 增加 `_atomic_replace_items`：�
 4. 让第二个写入者在读取历史后追加新事件，再提交旧输入产生的摘要；检查是否覆盖新工作，并验证应用的协调方案确实阻止该竞争。
 
 将配置、故障位置和真实后端结果纳入[长任务评测记录](agent-evaluation.html)。作者回归覆盖与本次独立实测必须分开记账。
+
+## Codex 0.164.0：压缩失败的提交与回退边界
+
+Codex **0.164.0 于 2026-10-23 04:48:10 UTC 发布**。本节在 **10 月 24 日**读取发行说明、两项补丁及正式版本 `6aaac694803004a63c6f393d153c96d22521a6b9` 的相关源码与回归。新证据涉及两个不同实现路径，不能外推为托管 Agents API 的服务保证；未安装 Codex、复跑测试或执行模型实验。<sup><a href="#cite-11">[11]</a></sup>
+
+### 本地流式压缩等待整次响应完成
+
+`compact.rs` 原先在非 PostTurn 阶段收到 `OutputItemDone` 就记录输出，后续断流可能让失败摘要进入会话历史与持久 rollout。补丁把原有 PostTurn 的缓冲原则扩展到其他阶段：每次尝试先收集输出，收到 `response.completed` 后才记录，并保留 `compaction_output` 元数据。<sup><a href="#cite-12">[12]</a></sup>
+
+作者回归用 mock SSE 先产生部分摘要再断开，比较同进程继续请求、重启后重试中的原始消息与工具结果；另一用例检查 `response.incomplete` 的部分摘要不会进入下一请求。这里保护的是失败输出的历史提交，不能理解为所有状态回滚：incomplete 的 usage 仍单独记账，不能由丢弃摘要推断免计费。上述用例本次仅阅读，未复跑。<sup><a href="#cite-12">[12]</a></sup>
+
+### 远端后台失败要释放等待对象
+
+另一补丁修复后台压缩在下个 checkpoint 前失败的路径：旧代码轮询已关闭的 oneshot receiver 后仍将其留在 session state，后续等待可能 panic，阻断前台压缩回退。新代码先取出 receiver，仅在结果仍为 `Empty` 时放回；`Closed` 则丢弃。新增回归控制失败先于 checkpoint 被观察，并断言后续请求使用前台生成的摘要。<sup><a href="#cite-13">[13]</a></sup>
+
+这条后台路径要求远端 compaction V2、关闭 TokenBudget，并启用 `async_compaction`。正式版本中该功能仍为 **UnderDevelopment，默认关闭**，不能写成所有会话升级后都会后台压缩。<sup><a href="#cite-14">[14]</a></sup>
+
+**工程推导**：应分别定义输出完成、历史提交与失败回退条件。建议在隔离环境注入部分输出后断流、带 usage 的 incomplete、checkpoint 前后台失败，核对下一请求、持久历史和记账，而不只看最终回答；这些建议实验尚未执行。
 
 ## Agents API 的实现思路
 
@@ -199,6 +217,7 @@ print(result.final_output)
 
 ## 更新记录与未验证项
 
+- 2026-10-24：核查 10 月 23 日 Codex 0.164.0 与两项历史合入的压缩修复，补充本地流式输出的完成边界、远端后台失败回退及默认关闭的功能范围；只读源码与作者回归，未安装、复跑或执行模型实验。其余来源核查日期保持不变。
 - 2026-10-16：核查 10 月 15 日 Agents Python v0.24.0 与两项 10 月 13 日补丁，补充自动压缩的待决审批保护、Redis 原子替换与多写入者边界；未运行 SDK 回归、数据库或模型实验。旧产品材料与 Codex 快照的核查日期不变。
 - 本次来源范围为官方 release、指定补丁和固定版本的相关源码；X 公开读取覆盖不完整，不将本篇描述为社交动态或 Agent 研究的全量核查。
 - 2026-10-13：以运行时接口组织正文，补充调度、取消与故障注入设计；保留 `openai.html` 与学习进度标识。新增合同为工程推导，未运行实验。
@@ -220,5 +239,9 @@ print(result.final_output)
 <li id="cite-8"><a href="https://github.com/openai/openai-agents-python/releases/tag/v0.24.0">OpenAI Agents Python · v0.24.0</a><span class="source-meta">2026-10-15 02:20:12 UTC 发布，非 prerelease · 2026-10-16 核查 release 与 tag 对应 commit 17d994bd · 未安装或运行 SDK</span></li>
 <li id="cite-9"><a href="https://github.com/openai/openai-agents-python/commit/5eb47a5bdeab8ba9f6087de288c7e606816c76c6">Agents SDK · Defer automatic compaction for pending approvals</a><span class="source-meta">commit 2026-10-13，纳入 v0.24.0 · 2026-10-16 读取自动压缩分支与审批回归，交叉读 <a href="https://github.com/openai/openai-agents-python/blob/17d994bd3045dae71acda676a4ef4762ed8ecd94/src/agents/memory/openai_responses_compaction_session.py">正式版本固定源码</a>及 test_compaction_model_visibility.py · 未复跑</span></li>
 <li id="cite-10"><a href="https://github.com/openai/openai-agents-python/commit/f50525c8d7a77fd0935a01f27cb8231ed6e53670">Agents SDK · Replace Redis compaction history atomically</a><span class="source-meta">commit 2026-10-13，纳入 v0.24.0 · 2026-10-16 读取替换 hook、包装 / 子类边界及回归用例，交叉读 <a href="https://github.com/openai/openai-agents-python/blob/17d994bd3045dae71acda676a4ef4762ed8ecd94/src/agents/extensions/memory/redis_session.py">RedisSession 固定源码</a> · 未启动 Redis 或执行测试</span></li>
+<li id="cite-11"><a href="https://github.com/openai/codex/releases/tag/rust-v0.164.0">OpenAI Codex · 0.164.0</a><span class="source-meta">2026-10-23 04:48:10 UTC 发布，非 prerelease · 2026-10-24 核查发行说明与 annotated tag；正式版本 commit 6aaac694803004a63c6f393d153c96d22521a6b9 · 未安装或运行</span></li>
+<li id="cite-12"><a href="https://github.com/openai/codex/commit/400f2356d60c4663d46817a40b4d09c5c86f35ad">Codex · Preserve conversation history when compaction fails</a><span class="source-meta">PR #53932 于 2026-10-14 09:44:38 UTC 合入，纳入 0.164.0 · 2026-10-24 读取 diff、<a href="https://github.com/openai/codex/blob/6aaac694803004a63c6f393d153c96d22521a6b9/codex-rs/core/src/compact.rs#L821-L915">固定版本 drain_to_completed</a>及 <a href="https://github.com/openai/codex/blob/6aaac694803004a63c6f393d153c96d22521a6b9/codex-rs/core/tests/suite/compact.rs">failed_compaction_preserves_history_after_restart、incomplete_response_during_compaction_is_terminal_and_counted、manual_compact_emits_context_compaction_items 回归</a> · 作者 mock SSE 用例，未复跑</span></li>
+<li id="cite-13"><a href="https://github.com/openai/codex/commit/e8aa7c1678caa9a368243d72bf0e9b7859d97f15">Codex · Avoid panics after background compaction fails before a checkpoint</a><span class="source-meta">PR #55581 于 2026-10-20 13:50:32 UTC 合入，纳入 0.164.0 · 2026-10-24 读取 diff、<a href="https://github.com/openai/codex/blob/6aaac694803004a63c6f393d153c96d22521a6b9/codex-rs/core/src/session/async_compaction.rs#L144-L187">固定版本 take_ready / wait_for_pending</a>及 <a href="https://github.com/openai/codex/blob/6aaac694803004a63c6f393d153c96d22521a6b9/codex-rs/core/tests/suite/scenarios.rs#L3010-L3294">async_compaction_reuses_pending_work 的 ReadyFailure 时序与 SYNC 摘要断言</a> · 未复跑</span></li>
+<li id="cite-14"><a href="https://github.com/openai/codex/blob/6aaac694803004a63c6f393d153c96d22521a6b9/codex-rs/features/src/lib.rs#L2119-L2124">Codex 0.164.0 · async_compaction 功能状态</a><span class="source-meta">固定 commit 6aaac694803004a63c6f393d153c96d22521a6b9，随 2026-10-23 正式版发布 · 2026-10-24 读取 UnderDevelopment / default_enabled=false 定义与<a href="https://github.com/openai/codex/blob/6aaac694803004a63c6f393d153c96d22521a6b9/codex-rs/core/src/session/async_compaction.rs#L40-L50">远端 V2 / TokenBudget 启用条件</a> · 未核验账号或服务端实际开关</span></li>
 </ol>
 </div></footer>
