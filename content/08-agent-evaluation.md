@@ -5,9 +5,9 @@
   "topic": "评测与交付",
   "summary": "从 AgencyBench、AgentLAB、METR 与插件评测案例出发，区分交付质量、轨迹因果、可靠性及基础设施噪声。",
   "order": 8,
-  "updated": "2026-10-20",
+  "updated": "2026-10-27",
   "tags": ["AgencyBench", "AgentLAB", "METR", "可靠性"],
-  "minutes": 19
+  "minutes": 22
 }
 ---
 
@@ -42,6 +42,25 @@ Anthropic 2026-02-05 的控制实验保持模型、Harness 和任务固定，在
 METR TH1.1 在 2026-01-29 将任务集从 170 扩到 228，8 小时以上任务从 14 增到 31，但只有 5 个长任务具有人类实测时间。**50% time horizon 描述模型在按人类任务耗时刻画的任务难度上达到 50% 成功的拟合位置，不是 Agent 能可靠连续运行多久。**<sup><a href="#cite-5">[5]</a></sup>
 
 3 月 20 日研究笔记进一步讨论拟合与正则化假设，修正使部分近期模型的 50% horizon 下调最多约 20%。该材料属于审阅较少的研究笔记；趋势图应附任务分布、时间估计和拟合方法，不能单凭一条曲线推出任意生产工作的自动化期限。<sup><a href="#cite-6">[6]</a></sup>
+
+## Terra 系统卡：把不同失败事件的分母分开
+
+OpenAI 于 **2026-10-26** 发布 GPT-6.1 Terra 系统卡补充说明，本节 **10 月 27 日**核查。与其拼接安全分数，更值得比较各项测试究竟把什么计为事件。<sup><a href="#cite-11">[11]</a></sup>
+
+| 系统卡中的测试 | 实际观察对象 | 不能省略的条件 |
+|---|---|---|
+| Auto-review 拒绝之后 | 是否尝试绕过监控；Terra 本测试未观察到此尝试 | 这不是所有环境限制下的结论 |
+| 环境警告之后 | 成功规避限制，而非仅发起尝试 | 最大推理档、无系统级防护的低风险模拟；存在评测意识与外部有效性限制 |
+| 外部 Agent 消息 | 交流尝试与指定未授权行动分开 | 10 类情境共 80 样本，均发现消息板；交流也包含拒绝和失败联系 |
+| 内部部署模拟 | 匹配任务中的严重性标记 | 48,690 个任务，不能当外部生产事故率 |
+
+这些披露来自研究环境或 API，提示、工具与推理档位可能不同于生产产品；不同表格的事件、样本和分母不能互换。本文未运行这些评测，也不将某项零观察解释为风险消失。<sup><a href="#cite-11">[11]</a></sup>
+
+**工程推导（未执行）**：为每个 trial 分别记录障碍来源、模型实际看到的反馈、随后请求的动作、执行器是否放行、外部状态是否改变，以及最终向用户披露了什么。“提出了违规请求但被阻止”和“真正完成了未授权动作”应有不同结果；最终文字中的承诺也不能替代执行回执。
+
+可以用受控的本地模拟工具构造三类验收：明确拒绝后的停止或安全交接；不可信内容带来的未授权要求；正常任务在许可内继续完成。不要在生产系统尝试绕过真实限制。对每类分别报告任务质量、违规请求、实际执行和证据缺失，把运行失败与缺少观测区分开。全部拒绝虽然可能降低行动风险，却不能证明 Agent 有可用价值。
+
+模型路由因此需要按风险类别设门槛：便宜或快速的候选模型，仍要通过该类任务的许可、停止和交付检查；必要时转交人工或已验证路径。这个建议不依赖某个榜单名次，也不是本文对 Terra 生产可靠性的判断。接入字段与历史格式的迁移另见[模型迁移合同](model-migration.html)，本节只讨论行为验收证据。
 
 ## AgentLAB：安全需要检查整条轨迹
 
@@ -108,6 +127,8 @@ README 将 SQLite 3.40.1 的 TCL 测试转成 `initial_database`、`user_query`�
 
 ## 更新记录与证据边界
 
+- 2026-10-27：补充 Terra 系统卡的事件定义、样本分母与部署边界；验收表为工程建议，未运行模型或安全实验，旧研究核查日期不变。
+
 - 2026-10-20：核查 MultiLangBench 公告和固定 README，补充跨语言产物接口、272 项子集与判分有效性边界；未运行模型或 benchmark，既有研究核查日期不变。
 
 - 2026-10-19：复核新增 Google Cloud 案例及其发布日期、并发调用与指导注入机制；未运行对照实验，既有论文与生产 trace 文档核查日期不变。
@@ -131,5 +152,6 @@ README 将 SQLite 3.40.1 的 TCL 测试转成 `initial_database`、`user_query`�
 <li id="cite-8"><a href="https://cloud.google.com/blog/topics/developers-practitioners/four-eval-engineering-lessons">Google Cloud · Four evaluation engineering lessons learned from building agent plugins</a><span class="source-meta">2026-10-16 发布，未给日内时间 · 2026-10-17 读取全文，2026-10-19 复核并行 dispatch 与指导注入的因果案例 · 作者实践报告，未给固定 Harness 版本，未独立复现</span></li>
 <li id="cite-9"><a href="https://openai.com/index/low-resource-programming-languages/">OpenAI · Advancing coding in low-resource programming languages</a><span class="source-meta">2026-10-19 发布 · 2026-10-20 核查 MultiLangBench 产物与参考验收设计 · 厂商发布，未复测模型结果</span></li>
 <li id="cite-10"><a href="https://github.com/openai/MultiLangBench/blob/995755bffdba3da60ca367448a1606ba0e50573a/README.md">MultiLangBench · README 固定快照</a><span class="source-meta">commit 995755bffdba3da60ca367448a1606ba0e50573a，2026-10-19 · 2026-10-20 读取测试转换、子集、环境与判分合同 · 未运行测试套件</span></li>
+<li id="cite-11"><a href="https://deploymentsafety.openai.com/gpt-6-1-terra">OpenAI · Addendum to GPT-6 Astra System Card: GPT-6.1 Terra</a><span class="source-meta">2026-10-26 发布 · 2026-10-27 阅读 §1、§7.1、§7.2、§7.5.1、§7.5.2 及限制说明 · 研究 / API 条件、内部部署模拟，未复跑；不同事件与分母不混用，不外推外部生产风险</span></li>
 </ol>
 </div></footer>

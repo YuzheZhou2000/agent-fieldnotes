@@ -5,9 +5,9 @@
   "topic": "评测与交付",
   "summary": "用状态、工具、记忆、权限与验收约束组织系统设计，选择最小可证伪实验，再逐项增加复杂度。",
   "order": 6,
-  "updated": "2026-10-20",
+  "updated": "2026-10-27",
   "tags": ["系统设计", "RLM", "LangGraph", "实验方法"],
-  "minutes": 26
+  "minutes": 29
 }
 ---
 
@@ -70,6 +70,16 @@ LangGraph **1.2.16 于 2026-10-16 22:11:28 UTC 发布**。本节在 **2026-10-17
 - **reducer 更新次数与任务执行次数都要验证。** PR #9322 让普通 pending writes 排在 resume 特殊写之前，保持按列表位置保存的普通写索引稳定，避免连续 `Command(resume=..., update=...)` 重复应用更新。上游三次恢复的测试检查 `u1`、`u2`、`u3` 各出现一次。该问题涉及 `sync` / `async` durability；`exit` 的配套 PR #9314 则限制退出时重新保存的 pending writes，只处理本次实际写入的任务。<sup><a href="#cite-26">[26]</a></sup><sup><a href="#cite-27">[27]</a></sup>
 
 **工程推导**：这些修复缩小了已知恢复路径中的重复执行和重复状态更新问题，没有把 checkpoint 与外部 API 写入组成同一事务。外部请求成功后、结果持久化前的崩溃窗口仍需业务幂等、去重记录或适用的事务性 outbox 设计处理。验收分别统计最终 state、任务调用次数与外部实际操作次数；再区分正常 resume、历史 replay、无效审批答案和真实进程崩溃。上述验证建议未执行。
+
+#### LangGraph 1.2.18：已保存的检查点也要被恢复客户端看见
+
+LangGraph **1.2.18 于 2026-10-26 20:04:45 UTC 发布**，本节 **10 月 27 日**核查。PR #9409 处理的是 `interrupt_after` 或递归上限退出时，最终已保存检查点未进入 `checkpoints` / `debug` 流；客户端若从最后看见的位置恢复，可能再跑最后一个节点。这里缺的是观察到的恢复游标，不应写成检查点没有保存。<sup><a href="#cite-32">[32]</a> <a href="#cite-33">[33]</a></sup>
+
+补丁把准备下一步任务和发出检查点提取为共同方法，在上述两处退出及普通 tick 调用。所读同步 / 异步测试把最后流式 config 与权威 state 比较；暂停用例还检查下一节点为 `two`。这些测试是上游源码证据，本文未运行；不能据此证明所有后端、断线和 durability 配置都已覆盖。固定版本的实现入口见 `_loop.py`。<sup><a href="#cite-33">[33]</a> <a href="#cite-34">[34]</a></sup>
+
+**工程推导（未执行）**：恢复链路要分开记录“后端已保存的位置”“客户端最后接收的位置”和“外部动作已确认的位置”。前两者不一致会使界面或客户端选错恢复点；即使前两者一致，也不能回答外部写入是否发生。消费方还应允许这些退出路径新增的末尾检查点事件，而不是把旧事件数写死成协议。
+
+可用无害的两节点流程做集成验收：第一节点更新测试状态后暂停，比较末尾游标与持久状态，再继续到第二节点；分别检查节点调用次数、最终状态和模拟外部操作次数。再加入传输截断，确认客户端会查询权威状态或保留 unknown，而不是猜测最后一条已送达事件就是最新事实。这里的建议扩展了应用层验收，**不是已执行的上游复现，也不提供 exactly-once 保证**。
 
 ### 3. Context engineering 与 RLM
 
@@ -195,6 +205,8 @@ GitHub 项目发现可用组合查询，例如 `agent in:readme language:python 
 
 ## 更新记录与证据边界
 
+- 2026-10-27：核查 LangGraph 1.2.18 / PR #9409 的持久状态与流式恢复游标差异，阅读固定实现与上游测试；未运行框架、断线或副作用实验。
+
 - 2026-10-20：核查 LangGraph CLI 0.4.37 与 PR #9350 的 stdin 日志修复及合成 token 测试；未运行上游测试或部署 CLI，旧来源核查日期不变。
 
 - 2026-10-19：复核本次新增的 LangGraph 与 DeepSeek 官方来源；明确来源日期、核查日期和计费生效日期，旧产品与论文核查日期不变。未执行框架或计费实验。
@@ -241,5 +253,8 @@ GitHub 项目发现可用组合查询，例如 `agent in:readme language:python 
 <li id="cite-29"><a href="https://api-docs.deepseek.com/zh-cn/guides/search/">DeepSeek · 网页搜索与抓取</a><span class="source-meta">滚动官方文档，未确认独立发布日期 · 2026-10-18 核查，2026-10-19 复核成功判据、count、错误与重试规则 · 未运行接口或计费实验</span></li>
 <li id="cite-30"><a href="https://github.com/langchain-ai/langgraph/releases/tag/cli%3D%3D0.4.37">LangGraph CLI · 0.4.37 发布记录</a><span class="source-meta">2026-10-19 14:06:22 UTC 发布 · 2026-10-20 核查包含 PR #9350 · 未运行 CLI</span></li>
 <li id="cite-31"><a href="https://github.com/langchain-ai/langgraph/pull/9350">LangGraph · 停止在 verbose 日志打印子进程 stdin，PR #9350</a><span class="source-meta">2026-10-19 13:45:43 UTC 合入，commit 7b23a1084683c58a4c20f4e1290968536cc34e85 · 2026-10-20 读取 exec.py 与 test_exec.py diff、PR 说明 · 未复跑测试</span></li>
+<li id="cite-32"><a href="https://github.com/langchain-ai/langgraph/releases/tag/1.2.18">LangGraph · 1.2.18 发布记录</a><span class="source-meta">2026-10-26 20:04:45 UTC 发布 · 2026-10-27 核查，release commit 3521f08e21a7d89c28331191374bc85c11ecb6e2 · 本节仅采用末尾检查点流修复，未安装运行框架</span></li>
+<li id="cite-33"><a href="https://github.com/langchain-ai/langgraph/pull/9409">LangGraph · 末尾检查点流，PR #9409</a><span class="source-meta">2026-10-26 13:18:03 UTC 合入，merge commit 1b1aee689de099035e04f0879616c5583d8c88b8 · 2026-10-27 阅读说明、实现 diff 和同步 / 异步回归测试 · 未复跑，未验证真实外部副作用</span></li>
+<li id="cite-34"><a href="https://github.com/langchain-ai/langgraph/blob/3521f08e21a7d89c28331191374bc85c11ecb6e2/libs/langgraph/langgraph/pregel/_loop.py">LangGraph · 1.2.18 固定源码 _loop.py</a><span class="source-meta">固定 release commit · 2026-10-27 核查 tick、interrupt_after 与 _prepare_tasks_and_emit_checkpoint 调用关系 · 源码阅读不等于各后端部署验证</span></li>
 </ol>
 </div></footer>

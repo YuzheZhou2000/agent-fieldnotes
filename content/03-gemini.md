@@ -5,9 +5,9 @@
   "topic": "工具与协议",
   "summary": "把工具目录、授权、调度和结果处理分层，以 Argon 持续生成与 ADK 工具检查、节点审批说明运行时合同。",
   "order": 3,
-  "updated": "2026-10-14",
+  "updated": "2026-10-28",
   "tags": ["MCP", "A2A", "调度器", "Google"],
-  "minutes": 23
+  "minutes": 26
 }
 ---
 
@@ -150,6 +150,25 @@ Model Armor 增量是在 `ModelArmorPlugin.after_tool_callback` 中检查工具�
 
 **建议验证（未执行）**：分别测普通文本、媒体、异步工具和不同插件顺序；确认不曾送检的内容不会显示“已通过”。对确认门测批准、拒绝、批准后改变目标与子节点暂停恢复，核对实际副作用次数，而不只看确认弹窗。两种机制分别处理结果进入模型和动作开始执行的边界，不能互相替代。
 
+## A2UI：生成格式可以换，界面合同不能省略
+
+Google 于 **2026-10-27** 公告 A2UI 可替换 inference format：模型生成较紧凑的 Express 等格式，再由确定性编译器转换为标准 JSON 传输消息，renderer 不必直接消费模型的 DSL。这里解决的是 Agent 生成界面的表示问题，不是 A2A 的跨 Agent 任务协议。公告说明当时 Python / TypeScript SDK 的 Direct JSON 可逐块流式处理，而 **Express 仍从完整回复编译**；不能把输出 token 减少直接等同于更早出现可用界面。<sup><a href="#cite-21">[21]</a></sup>
+
+**版本边界（10 月 28 日核查）**：Python SDK changelog 的 0.9.0 日期是 **10 月 17 日**，不是公告日。公告称 Express 为新默认，但本次固定源码快照中，默认从 Direct JSON 改为 Express，以及 `compile` 与带 catalog / renderer state 校验的 `parse_response`、`open_stream` 分层，仍列在 **Unreleased**。部署时显式指定格式并锁定 SDK、协议和 catalog 版本，不将主分支说明套到 0.9.0。编译出消息不等于完成状态校验，更不是业务授权。<sup><a href="#cite-22">[22]</a></sup>
+
+以下为**工程推导，未执行 SDK 实验**。把生成链路拆成可单测的四个边界：
+
+| 边界 | 应记录的合同 | 容易漏掉的失败 |
+|---|---|---|
+| 模型 → 生成格式 | 明确格式、catalog hash、完整/截断状态 | 模型仍按旧格式输出；重试混入两个回复 |
+| 编译器 → 传输消息 | 编译器版本、错误类型、确定性结果 | 可解析文本引用不存在的组件或状态 |
+| 消息 → renderer | surface 生命周期、更新顺序、已应用版本 | 首次展示正常，第二轮更新指向已删除 surface |
+| 界面行动 → 业务服务 | 操作 ID、身份、资源范围、确认依据 | 组件在允许目录中，但操作越权或重复提交 |
+
+例如订单确认页可以让模型组织展示，但金额与订单归属由后端事实决定，点击动作仍由服务端授权。不要将“只使用受信组件”理解成“所有组件参数、URL 和行动都可信”。界面上的确认也必须对应用户看到的那一版订单，而非之后已被更新的内容。
+
+**建议比较，尚未运行**：对同一 catalog 和任务集，分别测 Direct JSON 与 Express 的生成 token、编译/修复失败、首个可操作界面时间、最终状态正确率及重试成本。加入半截输出、重复回复、两次连续更新、取消后迟到消息和 catalog 升级用例；移动端、键盘焦点与确认文本完整性单独验收。只减少最终回复长度却增加首屏等待，可能并不适合交互密集场景。官方小规模模型评测不构成跨模型或生产负载的通用加速保证。<sup><a href="#cite-21">[21]</a></sup>
+
 ## 教程、开源实现与练习
 
 | 资源 | 类型 | 具体用途 |
@@ -190,6 +209,8 @@ root_agent = Agent(
 
 ## 更新记录与未验证项
 
+- 2026-10-28：补充 10 月 27 日 A2UI 格式解耦公告，区分 0.9.0、Unreleased 默认与完整回复编译；未安装 SDK 或复跑性能评测。
+
 - 2026-10-14：依据 10 月 13 日公告、API changelog 和迁移文档，纠正 Argon 受限开放状态与 token 口径，补充 long decode 恢复、缓存与配置边界；静态核查 ADK Python v2.12.0 的工具结果检查、节点确认与限制。没有新增文章或执行模型调用。
 - 2026-10-13：按工具系统组织文章，补充目录、授权、调度和结果合同，以及跨服务失败语义；保留 `gemini.html`。新增验证方案未执行。
 
@@ -221,5 +242,7 @@ root_agent = Agent(
 <li id="cite-18"><a href="https://github.com/google/adk-python/releases/tag/v2.12.0">ADK Python · v2.12.0</a><span class="source-meta">2026-10-13 16:35:19 UTC 发布，非 prerelease · 2026-10-14 核查 GitHub release 元数据与对应提交 · 未安装运行</span></li>
 <li id="cite-19"><a href="https://github.com/google/adk-python/commit/fdda17cbcfec35a1cca1638b028c1af98e893eae">ADK · Model Armor 工具结果检查</a><span class="source-meta">commit 2026-10-06，纳入 v2.12.0 · 2026-10-14 读取 _plugin.py、_config.py 与集成文档 diff，交叉读 v2.12.0 callback · 未连接 Model Armor</span></li>
 <li id="cite-20"><a href="https://github.com/google/adk-python/commit/988fd1a73d174f9e3acb6d2e1bec102f9ec02238">ADK · FunctionNode / @node require_confirmation</a><span class="source-meta">commit 2026-10-12，纳入 v2.12.0 · 2026-10-14 选读 FunctionNode、node、HITL / graph utils 与相关测试 diff · 未复跑</span></li>
+<li id="cite-21"><a href="https://developers.googleblog.com/fast-reliable-a2ui/">Google · Fast, reliable A2UI, with swappable inference formats</a><span class="source-meta">2026-10-27 · 2026-10-28 读取机制、SDK 与流式限制 · 厂商评测未复现</span></li>
+<li id="cite-22"><a href="https://github.com/a2ui-project/a2ui/blob/ccf5dc20d0b0ed041b03e3913d807420ff45e178/python/a2ui_agent/CHANGELOG.md">A2UI Python SDK · 固定 changelog 快照</a><span class="source-meta">commit ccf5dc20d0b0ed041b03e3913d807420ff45e178 · 2026-10-28 核查 Unreleased 与 0.9.0 边界 · 未安装运行</span></li>
 </ol>
 </div></footer>

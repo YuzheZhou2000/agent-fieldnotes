@@ -25,7 +25,7 @@
 <div class="eyebrow">FIELDNOTE 03 / 工具与协议</div>
 <h1><span class="title-line">工具系统：</span><span class="title-line">调度、能力发现与跨 Agent 协议</span></h1>
 <p class="lede">把工具目录、授权、调度和结果处理分层，以 Argon 持续生成与 ADK 工具检查、节点审批说明运行时合同。</p>
-<div class="article-meta"><time datetime="2026-10-14">2026-10-14</time><span>约 23 分钟</span><a href="../content/03-gemini.md" download>Markdown 源文 ↗</a></div>
+<div class="article-meta"><time datetime="2026-10-28">2026-10-28</time><span>约 26 分钟</span><a href="../content/03-gemini.md" download>Markdown 源文 ↗</a></div>
 <div class="tag-row"><span class="tag">MCP</span><span class="tag">A2A</span><span class="tag">调度器</span><span class="tag">Google</span></div>
 </header>
 <div class="article-layout">
@@ -50,6 +50,7 @@
 <li><a href="#adk-a2a">ADK 与 A2A 的学习路线</a><ul>
 <li><a href="#h-92ced60b17cb">ADK Python 2.12.0：输出检查与节点确认各守一段边界</a></li>
 </ul></li>
+<li><a href="#h-f33f2744e120">A2UI：生成格式可以换，界面合同不能省略</a></li>
 <li><a href="#_5">教程、开源实现与练习</a></li>
 <li><a href="#_6">更新记录与未验证项</a></li>
 <li><a href="#sources">来源与证据说明</a></li>
@@ -257,6 +258,43 @@
 <p>Model Armor 增量是在 <code>ModelArmorPlugin.after_tool_callback</code> 中检查工具结果，<strong>不是首次新增通用 after-tool 接口</strong>。必须设置 <code>tool_output_template_name</code>；它提取文本、分块送检，阻断时把结果换为 error 字典，检查失败默认阻断。live streaming、long-running tools 的后续输出，以及原始 bytes / 非文本媒体不在这条检查路径；更早返回非 <code>None</code> 的插件也可让该回调被跳过。插件顺序、覆盖路径与错误处理是部署合同，不能称为全面工具输出屏障。<sup><a href="#cite-19">[19]</a></sup></p>
 <p><code>FunctionNode</code> / <code>@node</code> 的 <code>require_confirmation</code> 在函数 body 前通过 <code>RequestInput</code> 暂停；确认后再进入执行，拒绝则跳过 body、返回拒绝结果。它要求 <code>rerun_on_resume=True</code>，<code>@node</code> 在未显式设置时会启用，显式关闭则报配置错误。这是节点的确认门，不是全局资源授权或外部副作用 exactly-once。嵌套暂停还可能重入父节点，批准绑定的参数、下游拒绝分支和重入副作用需独立验证。<sup><a href="#cite-20">[20]</a></sup></p>
 <p><strong>建议验证（未执行）</strong>：分别测普通文本、媒体、异步工具和不同插件顺序；确认不曾送检的内容不会显示“已通过”。对确认门测批准、拒绝、批准后改变目标与子节点暂停恢复，核对实际副作用次数，而不只看确认弹窗。两种机制分别处理结果进入模型和动作开始执行的边界，不能互相替代。</p>
+<h2 id="h-f33f2744e120">A2UI：生成格式可以换，界面合同不能省略</h2>
+<p>Google 于 <strong>2026-10-27</strong> 公告 A2UI 可替换 inference format：模型生成较紧凑的 Express 等格式，再由确定性编译器转换为标准 JSON 传输消息，renderer 不必直接消费模型的 DSL。这里解决的是 Agent 生成界面的表示问题，不是 A2A 的跨 Agent 任务协议。公告说明当时 Python / TypeScript SDK 的 Direct JSON 可逐块流式处理，而 <strong>Express 仍从完整回复编译</strong>；不能把输出 token 减少直接等同于更早出现可用界面。<sup><a href="#cite-21">[21]</a></sup></p>
+<p><strong>版本边界（10 月 28 日核查）</strong>：Python SDK changelog 的 0.9.0 日期是 <strong>10 月 17 日</strong>，不是公告日。公告称 Express 为新默认，但本次固定源码快照中，默认从 Direct JSON 改为 Express，以及 <code>compile</code> 与带 catalog / renderer state 校验的 <code>parse_response</code>、<code>open_stream</code> 分层，仍列在 <strong>Unreleased</strong>。部署时显式指定格式并锁定 SDK、协议和 catalog 版本，不将主分支说明套到 0.9.0。编译出消息不等于完成状态校验，更不是业务授权。<sup><a href="#cite-22">[22]</a></sup></p>
+<p>以下为<strong>工程推导，未执行 SDK 实验</strong>。把生成链路拆成可单测的四个边界：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>边界</th>
+<th>应记录的合同</th>
+<th>容易漏掉的失败</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型 → 生成格式</td>
+<td>明确格式、catalog hash、完整/截断状态</td>
+<td>模型仍按旧格式输出；重试混入两个回复</td>
+</tr>
+<tr>
+<td>编译器 → 传输消息</td>
+<td>编译器版本、错误类型、确定性结果</td>
+<td>可解析文本引用不存在的组件或状态</td>
+</tr>
+<tr>
+<td>消息 → renderer</td>
+<td>surface 生命周期、更新顺序、已应用版本</td>
+<td>首次展示正常，第二轮更新指向已删除 surface</td>
+</tr>
+<tr>
+<td>界面行动 → 业务服务</td>
+<td>操作 ID、身份、资源范围、确认依据</td>
+<td>组件在允许目录中，但操作越权或重复提交</td>
+</tr>
+</tbody>
+</table></div>
+<p>例如订单确认页可以让模型组织展示，但金额与订单归属由后端事实决定，点击动作仍由服务端授权。不要将“只使用受信组件”理解成“所有组件参数、URL 和行动都可信”。界面上的确认也必须对应用户看到的那一版订单，而非之后已被更新的内容。</p>
+<p><strong>建议比较，尚未运行</strong>：对同一 catalog 和任务集，分别测 Direct JSON 与 Express 的生成 token、编译/修复失败、首个可操作界面时间、最终状态正确率及重试成本。加入半截输出、重复回复、两次连续更新、取消后迟到消息和 catalog 升级用例；移动端、键盘焦点与确认文本完整性单独验收。只减少最终回复长度却增加首屏等待，可能并不适合交互密集场景。官方小规模模型评测不构成跨模型或生产负载的通用加速保证。<sup><a href="#cite-21">[21]</a></sup></p>
 <h2 id="_5">教程、开源实现与练习</h2>
 <div class="table-wrap"><table>
 <thead>
@@ -329,6 +367,9 @@ root_agent = Agent(
 <h2 id="_6">更新记录与未验证项</h2>
 <ul>
 <li>
+<p>2026-10-28：补充 10 月 27 日 A2UI 格式解耦公告，区分 0.9.0、Unreleased 默认与完整回复编译；未安装 SDK 或复跑性能评测。</p>
+</li>
+<li>
 <p>2026-10-14：依据 10 月 13 日公告、API changelog 和迁移文档，纠正 Argon 受限开放状态与 token 口径，补充 long decode 恢复、缓存与配置边界；静态核查 ADK Python v2.12.0 的工具结果检查、节点确认与限制。没有新增文章或执行模型调用。</p>
 </li>
 <li>
@@ -370,13 +411,15 @@ root_agent = Agent(
 <li id="cite-18"><a href="https://github.com/google/adk-python/releases/tag/v2.12.0" target="_blank" rel="noopener noreferrer">ADK Python · v2.12.0</a><span class="source-meta">2026-10-13 16:35:19 UTC 发布，非 prerelease · 2026-10-14 核查 GitHub release 元数据与对应提交 · 未安装运行</span></li>
 <li id="cite-19"><a href="https://github.com/google/adk-python/commit/fdda17cbcfec35a1cca1638b028c1af98e893eae" target="_blank" rel="noopener noreferrer">ADK · Model Armor 工具结果检查</a><span class="source-meta">commit 2026-10-06，纳入 v2.12.0 · 2026-10-14 读取 _plugin.py、_config.py 与集成文档 diff，交叉读 v2.12.0 callback · 未连接 Model Armor</span></li>
 <li id="cite-20"><a href="https://github.com/google/adk-python/commit/988fd1a73d174f9e3acb6d2e1bec102f9ec02238" target="_blank" rel="noopener noreferrer">ADK · FunctionNode / @node require_confirmation</a><span class="source-meta">commit 2026-10-12，纳入 v2.12.0 · 2026-10-14 选读 FunctionNode、node、HITL / graph utils 与相关测试 diff · 未复跑</span></li>
+<li id="cite-21"><a href="https://developers.googleblog.com/fast-reliable-a2ui/" target="_blank" rel="noopener noreferrer">Google · Fast, reliable A2UI, with swappable inference formats</a><span class="source-meta">2026-10-27 · 2026-10-28 读取机制、SDK 与流式限制 · 厂商评测未复现</span></li>
+<li id="cite-22"><a href="https://github.com/a2ui-project/a2ui/blob/ccf5dc20d0b0ed041b03e3913d807420ff45e178/python/a2ui_agent/CHANGELOG.md" target="_blank" rel="noopener noreferrer">A2UI Python SDK · 固定 changelog 快照</a><span class="source-meta">commit ccf5dc20d0b0ed041b03e3913d807420ff45e178 · 2026-10-28 核查 Unreleased 与 0.9.0 边界 · 未安装运行</span></li>
 </ol>
 </div></footer>
 </article>
 </div>
 <a class="next-article" href="muse.html"><small>继续阅读 →</small><strong>行动边界：身份、凭据与持久记忆的信任</strong></a>
 </main>
-<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-14 · 正文与来源随 Git 维护</span></footer>
+<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-28 · 正文与来源随 Git 维护</span></footer>
 </div>
 </body>
 </html>

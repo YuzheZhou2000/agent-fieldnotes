@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-24",
+  "updated": "2026-10-28",
   "stages": [
     {
       "id": "loop",
@@ -52,8 +52,8 @@
       "kind": "已有专题入口",
       "question": "重启之后，哪些事实仍然可信？",
       "outcome": "能分开事件日志、模型工作集、产物及外部副作用的恢复合同。",
-      "posts": ["openai", "claude"],
-      "exercise": "画出提交成功但结果尚未持久化时的未知区间；为 SDK / API 升级后的旧历史回放列一份迁移检查表，再核对失败摘要是否进入恢复历史。",
+      "posts": ["openai", "claude", "model-migration"],
+      "exercise": "画出提交成功但结果尚未持久化时的未知区间；为 SDK / API 升级后的旧历史回放列一份迁移检查表，再核对失败摘要是否进入恢复历史，以及客户端游标是否对应最新持久状态。",
       "next": "待深化：持久化后端实作、并发写入、取消与故障注入。"
     },
     {
@@ -73,21 +73,21 @@
       "coverage": "available",
       "kind": "已有专题入口",
       "question": "怎样证明产物正确，而非仅有一段成功回复？",
-      "outcome": "能固定任务、预算、环境和 grader，区分轨迹诊断与最终交付。",
-      "posts": ["agent-evaluation", "agent-proof-contracts", "coding-agents", "agent-interview-prep"],
+      "outcome": "能固定任务、预算、环境和 grader，区分事实正确、行动授权、判断形成与最终交付。",
+      "posts": ["human-judgment", "agent-evaluation", "agent-proof-contracts", "coding-agents", "agent-interview-prep"],
       "exercise": "为一个任务写出成功、失败、无答案和环境异常的判分规则；再列出证明对象、性质、输入边界与未覆盖承诺。",
       "next": "待深化：评测集生命周期、线上回归和灰度发布的闭环。"
     },
     {
       "id": "learning",
       "title": "模型适配、训练与策略优化",
-      "coverage": "planned",
-      "kind": "待补独立专题",
+      "coverage": "available",
+      "kind": "已有迁移专题，训练仍待补",
       "question": "失败需要改上下文、工具，还是训练模型？",
-      "outcome": "计划覆盖 SFT / 偏好优化 / RL 的信号、成本、数据隔离与适用边界。",
-      "posts": [],
-      "exercise": "准备材料：整理可重复的失败类型，先排除资料和执行器错误。",
-      "next": "当前只有记忆研究与面试题中的局部讨论，尚无系统教程；不计为已覆盖。"
+      "outcome": "先掌握模型接入与长任务迁移的消息、工具和验收合同；SFT / 偏好优化 / RL 的训练信号与边界仍待专题。",
+      "posts": ["model-migration"],
+      "exercise": "为旧会话、新会话、必要字段丢失、动态工具遗漏和权限撤销列出迁移验收条件。",
+      "next": "已有推理接入与迁移专题，不代表训练路线完整；SFT / 偏好优化 / RL 数据、算法和训练评测仍待补。"
     },
     {
       "id": "operations",

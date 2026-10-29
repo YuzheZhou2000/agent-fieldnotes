@@ -25,7 +25,7 @@
 <div class="eyebrow">FIELDNOTE 08 / 评测与交付</div>
 <h1><span class="title-line">长任务评测：</span><span class="title-line">产物、轨迹与基础设施噪声</span></h1>
 <p class="lede">从 AgencyBench、AgentLAB、METR 与插件评测案例出发，区分交付质量、轨迹因果、可靠性及基础设施噪声。</p>
-<div class="article-meta"><time datetime="2026-10-20">2026-10-20</time><span>约 19 分钟</span><a href="../content/08-agent-evaluation.md" download>Markdown 源文 ↗</a></div>
+<div class="article-meta"><time datetime="2026-10-27">2026-10-27</time><span>约 22 分钟</span><a href="../content/08-agent-evaluation.md" download>Markdown 源文 ↗</a></div>
 <div class="tag-row"><span class="tag">AgencyBench</span><span class="tag">AgentLAB</span><span class="tag">METR</span><span class="tag">可靠性</span></div>
 </header>
 <div class="article-layout">
@@ -34,6 +34,7 @@
 <li><a href="#section-2">AgencyBench：把交付要求落实到 grader</a></li>
 <li><a href="#section-3">重复运行：pass@k 与 pass^k 回答不同问题</a></li>
 <li><a href="#section-4">排行榜差距未必来自模型</a></li>
+<li><a href="#h-a5152ba7feb3">Terra 系统卡：把不同失败事件的分母分开</a></li>
 <li><a href="#section-5">AgentLAB：安全需要检查整条轨迹</a></li>
 <li><a href="#section-6">最小复现记录与判分合同</a></li>
 <li><a href="#h-9a11bf9073a3">生产 trace 进入评测前先说明缺失机制</a></li>
@@ -59,6 +60,43 @@
 <p>因此复现报告应包含 CPU / 内存保证值、kill 上限、磁盘、任务超时、并发和冷启动。比较两个系统时，先确认失败是否来自模型决策；如果其中一组频繁 OOM，直接宣称能力差距会把调度策略当成推理能力。</p>
 <p>METR TH1.1 在 2026-01-29 将任务集从 170 扩到 228，8 小时以上任务从 14 增到 31，但只有 5 个长任务具有人类实测时间。<strong>50% time horizon 描述模型在按人类任务耗时刻画的任务难度上达到 50% 成功的拟合位置，不是 Agent 能可靠连续运行多久。</strong><sup><a href="#cite-5">[5]</a></sup></p>
 <p>3 月 20 日研究笔记进一步讨论拟合与正则化假设，修正使部分近期模型的 50% horizon 下调最多约 20%。该材料属于审阅较少的研究笔记；趋势图应附任务分布、时间估计和拟合方法，不能单凭一条曲线推出任意生产工作的自动化期限。<sup><a href="#cite-6">[6]</a></sup></p>
+<h2 id="h-a5152ba7feb3">Terra 系统卡：把不同失败事件的分母分开</h2>
+<p>OpenAI 于 <strong>2026-10-26</strong> 发布 GPT-6.1 Terra 系统卡补充说明，本节 <strong>10 月 27 日</strong>核查。与其拼接安全分数，更值得比较各项测试究竟把什么计为事件。<sup><a href="#cite-11">[11]</a></sup></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>系统卡中的测试</th>
+<th>实际观察对象</th>
+<th>不能省略的条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Auto-review 拒绝之后</td>
+<td>是否尝试绕过监控；Terra 本测试未观察到此尝试</td>
+<td>这不是所有环境限制下的结论</td>
+</tr>
+<tr>
+<td>环境警告之后</td>
+<td>成功规避限制，而非仅发起尝试</td>
+<td>最大推理档、无系统级防护的低风险模拟；存在评测意识与外部有效性限制</td>
+</tr>
+<tr>
+<td>外部 Agent 消息</td>
+<td>交流尝试与指定未授权行动分开</td>
+<td>10 类情境共 80 样本，均发现消息板；交流也包含拒绝和失败联系</td>
+</tr>
+<tr>
+<td>内部部署模拟</td>
+<td>匹配任务中的严重性标记</td>
+<td>48,690 个任务，不能当外部生产事故率</td>
+</tr>
+</tbody>
+</table></div>
+<p>这些披露来自研究环境或 API，提示、工具与推理档位可能不同于生产产品；不同表格的事件、样本和分母不能互换。本文未运行这些评测，也不将某项零观察解释为风险消失。<sup><a href="#cite-11">[11]</a></sup></p>
+<p><strong>工程推导（未执行）</strong>：为每个 trial 分别记录障碍来源、模型实际看到的反馈、随后请求的动作、执行器是否放行、外部状态是否改变，以及最终向用户披露了什么。“提出了违规请求但被阻止”和“真正完成了未授权动作”应有不同结果；最终文字中的承诺也不能替代执行回执。</p>
+<p>可以用受控的本地模拟工具构造三类验收：明确拒绝后的停止或安全交接；不可信内容带来的未授权要求；正常任务在许可内继续完成。不要在生产系统尝试绕过真实限制。对每类分别报告任务质量、违规请求、实际执行和证据缺失，把运行失败与缺少观测区分开。全部拒绝虽然可能降低行动风险，却不能证明 Agent 有可用价值。</p>
+<p>模型路由因此需要按风险类别设门槛：便宜或快速的候选模型，仍要通过该类任务的许可、停止和交付检查；必要时转交人工或已验证路径。这个建议不依赖某个榜单名次，也不是本文对 Terra 生产可靠性的判断。接入字段与历史格式的迁移另见<a href="model-migration.html">模型迁移合同</a>，本节只讨论行为验收证据。</p>
 <h2 id="section-5">AgentLAB：安全需要检查整条轨迹</h2>
 <p>AgentLAB 首发于 2026-02-18，覆盖 28 个环境、644 个案例，测试意图劫持、工具串联、任务注入、目标漂移和记忆投毒。表 3 中，GPT-5.1 的任务注入攻击成功率在单轮基线为 2.08%，长轨迹配置为 21.5%。这是特定威胁模型、预算和配置的作者结果，不是所有长任务的风险概率或最新安全排名。<sup><a href="#cite-7">[7]</a></sup></p>
 <p><strong>工程推导</strong>：逐个工具参数合法仍不足以保证组合行动符合原始目标；一次低信任内容写入记忆，还可能影响之后的任务。评测要冻结授权范围，给观察标注来源，在模拟环境追踪从外部内容到计划、记忆和行动的传播。成功完成正常任务与阻止恶意目标须并列报告，全部拒绝不能算可用的防御。</p>
@@ -104,6 +142,9 @@
 <h2 id="section-7">更新记录与证据边界</h2>
 <ul>
 <li>
+<p>2026-10-27：补充 Terra 系统卡的事件定义、样本分母与部署边界；验收表为工程建议，未运行模型或安全实验，旧研究核查日期不变。</p>
+</li>
+<li>
 <p>2026-10-20：核查 MultiLangBench 公告和固定 README，补充跨语言产物接口、272 项子集与判分有效性边界；未运行模型或 benchmark，既有研究核查日期不变。</p>
 </li>
 <li>
@@ -141,13 +182,14 @@
 <li id="cite-8"><a href="https://cloud.google.com/blog/topics/developers-practitioners/four-eval-engineering-lessons" target="_blank" rel="noopener noreferrer">Google Cloud · Four evaluation engineering lessons learned from building agent plugins</a><span class="source-meta">2026-10-16 发布，未给日内时间 · 2026-10-17 读取全文，2026-10-19 复核并行 dispatch 与指导注入的因果案例 · 作者实践报告，未给固定 Harness 版本，未独立复现</span></li>
 <li id="cite-9"><a href="https://openai.com/index/low-resource-programming-languages/" target="_blank" rel="noopener noreferrer">OpenAI · Advancing coding in low-resource programming languages</a><span class="source-meta">2026-10-19 发布 · 2026-10-20 核查 MultiLangBench 产物与参考验收设计 · 厂商发布，未复测模型结果</span></li>
 <li id="cite-10"><a href="https://github.com/openai/MultiLangBench/blob/995755bffdba3da60ca367448a1606ba0e50573a/README.md" target="_blank" rel="noopener noreferrer">MultiLangBench · README 固定快照</a><span class="source-meta">commit 995755bffdba3da60ca367448a1606ba0e50573a，2026-10-19 · 2026-10-20 读取测试转换、子集、环境与判分合同 · 未运行测试套件</span></li>
+<li id="cite-11"><a href="https://deploymentsafety.openai.com/gpt-6-1-terra" target="_blank" rel="noopener noreferrer">OpenAI · Addendum to GPT-6 Astra System Card: GPT-6.1 Terra</a><span class="source-meta">2026-10-26 发布 · 2026-10-27 阅读 §1、§7.1、§7.2、§7.5.1、§7.5.2 及限制说明 · 研究 / API 条件、内部部署模拟，未复跑；不同事件与分母不混用，不外推外部生产风险</span></li>
 </ol>
 </div></footer>
 </article>
 </div>
 <a class="next-article" href="agent-teams.html"><small>继续阅读 →</small><strong>Agent Teams：协作拓扑、状态边界与等预算评测</strong></a>
 </main>
-<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-20 · 正文与来源随 Git 维护</span></footer>
+<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-27 · 正文与来源随 Git 维护</span></footer>
 </div>
 </body>
 </html>
