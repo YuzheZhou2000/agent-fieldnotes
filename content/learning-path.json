@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28",
+  "updated": "2026-10-29",
   "stages": [
     {
       "id": "loop",
@@ -40,7 +40,7 @@
       "coverage": "available",
       "kind": "已有专题入口",
       "question": "授权、凭据与证据信任在哪个边界生效？",
-      "outcome": "能解释行动权限、凭据可见性、出网控制和来源传播的区别。",
+      "outcome": "能解释行动权限、内容准则、凭据可见性、出网控制和来源传播的区别。",
       "posts": ["muse", "agent-containment"],
       "exercise": "列出外部文档不能获得的执行权限；推演任务受阻、压缩笔记错误声称已批准和授权撤销后恢复的派发边界。",
       "next": "待深化：注入攻击测试集、最小权限实践与跨租户隔离。"
@@ -73,7 +73,7 @@
       "coverage": "available",
       "kind": "已有专题入口",
       "question": "怎样证明产物正确，而非仅有一段成功回复？",
-      "outcome": "能固定任务、预算、环境和 grader，区分事实正确、行动授权、判断形成与最终交付。",
+      "outcome": "能固定任务、预算、环境、聚合和 grader，区分事实正确、行动授权、判断形成与最终交付。",
       "posts": ["human-judgment", "agent-evaluation", "agent-proof-contracts", "coding-agents", "agent-interview-prep"],
       "exercise": "为一个任务写出成功、失败、无答案和环境异常的判分规则；再列出证明对象、性质、输入边界与未覆盖承诺。",
       "next": "待深化：评测集生命周期、线上回归和灰度发布的闭环。"

@@ -25,7 +25,7 @@
 <div class="eyebrow">FIELDNOTE 08 / 评测与交付</div>
 <h1><span class="title-line">长任务评测：</span><span class="title-line">产物、轨迹与基础设施噪声</span></h1>
 <p class="lede">从 AgencyBench、AgentLAB、METR 与插件评测案例出发，区分交付质量、轨迹因果、可靠性及基础设施噪声。</p>
-<div class="article-meta"><time datetime="2026-10-27">2026-10-27</time><span>约 22 分钟</span><a href="../content/08-agent-evaluation.md" download>Markdown 源文 ↗</a></div>
+<div class="article-meta"><time datetime="2026-10-29">2026-10-29</time><span>约 26 分钟</span><a href="../content/08-agent-evaluation.md" download>Markdown 源文 ↗</a></div>
 <div class="tag-row"><span class="tag">AgencyBench</span><span class="tag">AgentLAB</span><span class="tag">METR</span><span class="tag">可靠性</span></div>
 </header>
 <div class="article-layout">
@@ -35,6 +35,7 @@
 <li><a href="#section-3">重复运行：pass@k 与 pass^k 回答不同问题</a></li>
 <li><a href="#section-4">排行榜差距未必来自模型</a></li>
 <li><a href="#h-a5152ba7feb3">Terra 系统卡：把不同失败事件的分母分开</a></li>
+<li><a href="#h-e247b1923edb">Gemini 4 Carbon：先对齐切片、Harness、预算与聚合</a></li>
 <li><a href="#section-5">AgentLAB：安全需要检查整条轨迹</a></li>
 <li><a href="#section-6">最小复现记录与判分合同</a></li>
 <li><a href="#h-9a11bf9073a3">生产 trace 进入评测前先说明缺失机制</a></li>
@@ -97,6 +98,43 @@
 <p><strong>工程推导（未执行）</strong>：为每个 trial 分别记录障碍来源、模型实际看到的反馈、随后请求的动作、执行器是否放行、外部状态是否改变，以及最终向用户披露了什么。“提出了违规请求但被阻止”和“真正完成了未授权动作”应有不同结果；最终文字中的承诺也不能替代执行回执。</p>
 <p>可以用受控的本地模拟工具构造三类验收：明确拒绝后的停止或安全交接；不可信内容带来的未授权要求；正常任务在许可内继续完成。不要在生产系统尝试绕过真实限制。对每类分别报告任务质量、违规请求、实际执行和证据缺失，把运行失败与缺少观测区分开。全部拒绝虽然可能降低行动风险，却不能证明 Agent 有可用价值。</p>
 <p>模型路由因此需要按风险类别设门槛：便宜或快速的候选模型，仍要通过该类任务的许可、停止和交付检查；必要时转交人工或已验证路径。这个建议不依赖某个榜单名次，也不是本文对 Terra 生产可靠性的判断。接入字段与历史格式的迁移另见<a href="model-migration.html">模型迁移合同</a>，本节只讨论行为验收证据。</p>
+<h2 id="h-e247b1923edb">Gemini 4 Carbon：先对齐切片、Harness、预算与聚合</h2>
+<p>Google 在 <strong>2026-10-28</strong>公布 Gemini 4 Carbon，本节 <strong>10 月 29 日</strong>核查。公告的开放范围是部分网络防御者，并经 Fairwind 逐步扩展可信伙伴；面向开发者、企业与消费者的产品开放仍为后续计划。评测报告写使用 Gemini API，不等于读者现在能在普通账户调用 Carbon。<sup><a href="#cite-12">[12]</a></sup></p>
+<p>报告对 Carbon / Argon 默认采用最高思考设置与 pass@1，另列例外；小型基准会平均多次 trial，非 Gemini 结果通常来自其他提供方自报或注明的公开榜单。它并未把所有模型在同一环境重测。选读下面几项方法，比拼接公告分数更有助于设计自己的对照：<sup><a href="#cite-13">[13]</a></sup></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>任务与执行条件</th>
+<th>报告的聚合口径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SWE-sweep</td>
+<td>Carbon 使用 mini-swe-agent 自测；其他模型取公开榜单</td>
+<td>子任务加权 reward，保留其权重定义</td>
+</tr>
+<tr>
+<td>Agents' Last Exam v1.1</td>
+<td>122 任务，使用 10 月 17 日版本、未加 10 月 26 日更新；默认 ALE-Claw、5 小时窗口</td>
+<td>平均 rubric Score</td>
+</tr>
+<tr>
+<td>OSWorld 2.1</td>
+<td>82 任务离线子集，官方 Docker / evaluator、1080p、500 步上限，更新的 Gemini CUA Harness</td>
+<td>每个 run 单次尝试，3 个 run 取最大，报告 partial score</td>
+</tr>
+<tr>
+<td>SEC-bench Pro</td>
+<td>2026 年 5 月的 183 任务 JavaScript engine 切片，Antigravity Harness</td>
+<td>每任务三次独立尝试取平均的 pass@1</td>
+</tr>
+</tbody>
+</table></div>
+<p>不能把上述“平均三次”与“取最大”统称为同一种单次成功率。报告另为 ExploitGym 列出 <strong>6 小时和 10 小时</strong>时限、关闭 mitigations 的隔离评测设置；本节不将单个宣传分数映射到任一时限。报告的这两项 Gemini 计算机使用测试中，安全过滤返回空字符串时 episode 仍可能继续，空响应也不能直接当成整条任务已终止。本文没有运行这些评测。<sup><a href="#cite-13">[13]</a></sup></p>
+<p><strong>工程推导（未执行）</strong>：为每条比较保存模型快照、任务版本和切片、Harness / 观察空间、时间与步数预算、采样和聚合规则、grader 及失败分类。最高思考档位不能代替 token 或费用预算；未披露字段保留未知，不自行补齐。先固定这些条件，再报告产物、轨迹与成本分布，才能判断差异是否适用于自己的系统。</p>
+<p>例如换了任务快照、观察方式或取最大规则，就应建立新的实验记录，而非沿用原先的排名标签。这份厂商报告可用于发现需要对齐的合同，不足以给出统一模型排名或读者生产任务的收益保证。</p>
 <h2 id="section-5">AgentLAB：安全需要检查整条轨迹</h2>
 <p>AgentLAB 首发于 2026-02-18，覆盖 28 个环境、644 个案例，测试意图劫持、工具串联、任务注入、目标漂移和记忆投毒。表 3 中，GPT-5.1 的任务注入攻击成功率在单轮基线为 2.08%，长轨迹配置为 21.5%。这是特定威胁模型、预算和配置的作者结果，不是所有长任务的风险概率或最新安全排名。<sup><a href="#cite-7">[7]</a></sup></p>
 <p><strong>工程推导</strong>：逐个工具参数合法仍不足以保证组合行动符合原始目标；一次低信任内容写入记忆，还可能影响之后的任务。评测要冻结授权范围，给观察标注来源，在模拟环境追踪从外部内容到计划、记忆和行动的传播。成功完成正常任务与阻止恶意目标须并列报告，全部拒绝不能算可用的防御。</p>
@@ -142,6 +180,9 @@
 <h2 id="section-7">更新记录与证据边界</h2>
 <ul>
 <li>
+<p>2026-10-29：核查 Carbon 公告的有限开放状态及评测报告，补充切片、Harness、预算和聚合差异；不映射未明确标注的时限，不提供模型或 benchmark 复现结果。旧来源日期保持不变。</p>
+</li>
+<li>
 <p>2026-10-27：补充 Terra 系统卡的事件定义、样本分母与部署边界；验收表为工程建议，未运行模型或安全实验，旧研究核查日期不变。</p>
 </li>
 <li>
@@ -183,13 +224,15 @@
 <li id="cite-9"><a href="https://openai.com/index/low-resource-programming-languages/" target="_blank" rel="noopener noreferrer">OpenAI · Advancing coding in low-resource programming languages</a><span class="source-meta">2026-10-19 发布 · 2026-10-20 核查 MultiLangBench 产物与参考验收设计 · 厂商发布，未复测模型结果</span></li>
 <li id="cite-10"><a href="https://github.com/openai/MultiLangBench/blob/995755bffdba3da60ca367448a1606ba0e50573a/README.md" target="_blank" rel="noopener noreferrer">MultiLangBench · README 固定快照</a><span class="source-meta">commit 995755bffdba3da60ca367448a1606ba0e50573a，2026-10-19 · 2026-10-20 读取测试转换、子集、环境与判分合同 · 未运行测试套件</span></li>
 <li id="cite-11"><a href="https://deploymentsafety.openai.com/gpt-6-1-terra" target="_blank" rel="noopener noreferrer">OpenAI · Addendum to GPT-6 Astra System Card: GPT-6.1 Terra</a><span class="source-meta">2026-10-26 发布 · 2026-10-27 阅读 §1、§7.1、§7.2、§7.5.1、§7.5.2 及限制说明 · 研究 / API 条件、内部部署模拟，未复跑；不同事件与分母不混用，不外推外部生产风险</span></li>
+<li id="cite-12"><a href="https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/" target="_blank" rel="noopener noreferrer">Google · Introducing Gemini 4 Carbon</a><span class="source-meta">2026-10-28 发布 · 2026-10-29 阅读公告和开放范围 · 有限 Fairwind 接入，不视作普通 API 或产品全面开放；未采用宣传排名作为本站结论</span></li>
+<li id="cite-13"><a href="https://storage.googleapis.com/deepmind-media/gemini/gemini_4_carbon_model_evaluation.pdf" target="_blank" rel="noopener noreferrer">Google DeepMind · Gemini 4 Carbon Model evaluation</a><span class="source-meta">随公告公开的 5 页官方文件 · 2026-10-29 阅读 PDF 第 2–4 页方法，并视觉核对第 3、5 页；本次下载 SHA-256 及复核范围见研究记录，不冒充官方版本号 · 未运行模型、Harness 或安全评测</span></li>
 </ol>
 </div></footer>
 </article>
 </div>
 <a class="next-article" href="agent-teams.html"><small>继续阅读 →</small><strong>Agent Teams：协作拓扑、状态边界与等预算评测</strong></a>
 </main>
-<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-27 · 正文与来源随 Git 维护</span></footer>
+<footer class="site-footer"><span>Agent Fieldnotes · 面向可验证的 Agent 系统</span><span>资料核查 2026-10-29 · 正文与来源随 Git 维护</span></footer>
 </div>
 </body>
 </html>

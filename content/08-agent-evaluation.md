@@ -5,9 +5,9 @@
   "topic": "评测与交付",
   "summary": "从 AgencyBench、AgentLAB、METR 与插件评测案例出发，区分交付质量、轨迹因果、可靠性及基础设施噪声。",
   "order": 8,
-  "updated": "2026-10-27",
+  "updated": "2026-10-29",
   "tags": ["AgencyBench", "AgentLAB", "METR", "可靠性"],
-  "minutes": 22
+  "minutes": 26
 }
 ---
 
@@ -61,6 +61,25 @@ OpenAI 于 **2026-10-26** 发布 GPT-6.1 Terra 系统卡补充说明，本节 **
 可以用受控的本地模拟工具构造三类验收：明确拒绝后的停止或安全交接；不可信内容带来的未授权要求；正常任务在许可内继续完成。不要在生产系统尝试绕过真实限制。对每类分别报告任务质量、违规请求、实际执行和证据缺失，把运行失败与缺少观测区分开。全部拒绝虽然可能降低行动风险，却不能证明 Agent 有可用价值。
 
 模型路由因此需要按风险类别设门槛：便宜或快速的候选模型，仍要通过该类任务的许可、停止和交付检查；必要时转交人工或已验证路径。这个建议不依赖某个榜单名次，也不是本文对 Terra 生产可靠性的判断。接入字段与历史格式的迁移另见[模型迁移合同](model-migration.html)，本节只讨论行为验收证据。
+
+## Gemini 4 Carbon：先对齐切片、Harness、预算与聚合
+
+Google 在 **2026-10-28**公布 Gemini 4 Carbon，本节 **10 月 29 日**核查。公告的开放范围是部分网络防御者，并经 Fairwind 逐步扩展可信伙伴；面向开发者、企业与消费者的产品开放仍为后续计划。评测报告写使用 Gemini API，不等于读者现在能在普通账户调用 Carbon。<sup><a href="#cite-12">[12]</a></sup>
+
+报告对 Carbon / Argon 默认采用最高思考设置与 pass@1，另列例外；小型基准会平均多次 trial，非 Gemini 结果通常来自其他提供方自报或注明的公开榜单。它并未把所有模型在同一环境重测。选读下面几项方法，比拼接公告分数更有助于设计自己的对照：<sup><a href="#cite-13">[13]</a></sup>
+
+| 项目 | 任务与执行条件 | 报告的聚合口径 |
+|---|---|---|
+| SWE-sweep | Carbon 使用 mini-swe-agent 自测；其他模型取公开榜单 | 子任务加权 reward，保留其权重定义 |
+| Agents' Last Exam v1.1 | 122 任务，使用 10 月 17 日版本、未加 10 月 26 日更新；默认 ALE-Claw、5 小时窗口 | 平均 rubric Score |
+| OSWorld 2.1 | 82 任务离线子集，官方 Docker / evaluator、1080p、500 步上限，更新的 Gemini CUA Harness | 每个 run 单次尝试，3 个 run 取最大，报告 partial score |
+| SEC-bench Pro | 2026 年 5 月的 183 任务 JavaScript engine 切片，Antigravity Harness | 每任务三次独立尝试取平均的 pass@1 |
+
+不能把上述“平均三次”与“取最大”统称为同一种单次成功率。报告另为 ExploitGym 列出 **6 小时和 10 小时**时限、关闭 mitigations 的隔离评测设置；本节不将单个宣传分数映射到任一时限。报告的这两项 Gemini 计算机使用测试中，安全过滤返回空字符串时 episode 仍可能继续，空响应也不能直接当成整条任务已终止。本文没有运行这些评测。<sup><a href="#cite-13">[13]</a></sup>
+
+**工程推导（未执行）**：为每条比较保存模型快照、任务版本和切片、Harness / 观察空间、时间与步数预算、采样和聚合规则、grader 及失败分类。最高思考档位不能代替 token 或费用预算；未披露字段保留未知，不自行补齐。先固定这些条件，再报告产物、轨迹与成本分布，才能判断差异是否适用于自己的系统。
+
+例如换了任务快照、观察方式或取最大规则，就应建立新的实验记录，而非沿用原先的排名标签。这份厂商报告可用于发现需要对齐的合同，不足以给出统一模型排名或读者生产任务的收益保证。
 
 ## AgentLAB：安全需要检查整条轨迹
 
@@ -127,6 +146,8 @@ README 将 SQLite 3.40.1 的 TCL 测试转成 `initial_database`、`user_query`�
 
 ## 更新记录与证据边界
 
+- 2026-10-29：核查 Carbon 公告的有限开放状态及评测报告，补充切片、Harness、预算和聚合差异；不映射未明确标注的时限，不提供模型或 benchmark 复现结果。旧来源日期保持不变。
+
 - 2026-10-27：补充 Terra 系统卡的事件定义、样本分母与部署边界；验收表为工程建议，未运行模型或安全实验，旧研究核查日期不变。
 
 - 2026-10-20：核查 MultiLangBench 公告和固定 README，补充跨语言产物接口、272 项子集与判分有效性边界；未运行模型或 benchmark，既有研究核查日期不变。
@@ -153,5 +174,7 @@ README 将 SQLite 3.40.1 的 TCL 测试转成 `initial_database`、`user_query`�
 <li id="cite-9"><a href="https://openai.com/index/low-resource-programming-languages/">OpenAI · Advancing coding in low-resource programming languages</a><span class="source-meta">2026-10-19 发布 · 2026-10-20 核查 MultiLangBench 产物与参考验收设计 · 厂商发布，未复测模型结果</span></li>
 <li id="cite-10"><a href="https://github.com/openai/MultiLangBench/blob/995755bffdba3da60ca367448a1606ba0e50573a/README.md">MultiLangBench · README 固定快照</a><span class="source-meta">commit 995755bffdba3da60ca367448a1606ba0e50573a，2026-10-19 · 2026-10-20 读取测试转换、子集、环境与判分合同 · 未运行测试套件</span></li>
 <li id="cite-11"><a href="https://deploymentsafety.openai.com/gpt-6-1-terra">OpenAI · Addendum to GPT-6 Astra System Card: GPT-6.1 Terra</a><span class="source-meta">2026-10-26 发布 · 2026-10-27 阅读 §1、§7.1、§7.2、§7.5.1、§7.5.2 及限制说明 · 研究 / API 条件、内部部署模拟，未复跑；不同事件与分母不混用，不外推外部生产风险</span></li>
+<li id="cite-12"><a href="https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/">Google · Introducing Gemini 4 Carbon</a><span class="source-meta">2026-10-28 发布 · 2026-10-29 阅读公告和开放范围 · 有限 Fairwind 接入，不视作普通 API 或产品全面开放；未采用宣传排名作为本站结论</span></li>
+<li id="cite-13"><a href="https://storage.googleapis.com/deepmind-media/gemini/gemini_4_carbon_model_evaluation.pdf">Google DeepMind · Gemini 4 Carbon Model evaluation</a><span class="source-meta">随公告公开的 5 页官方文件 · 2026-10-29 阅读 PDF 第 2–4 页方法，并视觉核对第 3、5 页；本次下载 SHA-256 及复核范围见研究记录，不冒充官方版本号 · 未运行模型、Harness 或安全评测</span></li>
 </ol>
 </div></footer>

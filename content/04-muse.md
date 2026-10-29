@@ -3,11 +3,11 @@
   "slug": "muse",
   "title": "行动边界：身份、凭据与持久记忆的信任",
   "topic": "权限与安全",
-  "summary": "拆分用户身份、执行权限和证据信任，比较 VM、凭据代理与出网控制，检查跨任务记忆的权限传播。",
+  "summary": "区分身份、执行权限、内容准则与证据信任，比较凭据代理、出网控制和跨任务记忆的权限传播。",
   "order": 4,
-  "updated": "2026-10-13",
-  "tags": ["身份", "凭据隔离", "记忆来源", "Meta"],
-  "minutes": 15
+  "updated": "2026-10-29",
+  "tags": ["身份", "凭据隔离", "记忆来源", "Meta", "xAI"],
+  "minutes": 19
 }
 ---
 
@@ -29,6 +29,32 @@
 **工程推导**：VM 提供进程和资源边界；凭据代理控制外部服务身份；出网控制约束数据离开的路径；任务授权决定合法目的。任一层都不能单独判断完整行动是否符合用户意图。凭据对模型不可见仍需要防止代理被诱导执行越权操作，因此操作范围和最终环境状态要进入验收。
 
 持久记忆尤其需要保留来源、有效时间、用户归属和适用范围。一次低信任观察被压成“用户偏好”，会跨任务改变计划。应把用户明确修正与推测分开存储，支持撤销和失效，测试旧任务结束后权限是否仍被沿用。
+
+## 请求内容准则与行动授权分开验收
+
+xAI 在 **10 月 27 日**更新记录中加入 Custom Moderation Controls；本节于 **2026-10-29**核查。Chat Completions 和 Responses 请求可带 `guidelines`，为 `nsfw`、`violence`、`profanity` 分类指定当前支持的 `decline` 行为。遗漏分类仍采用默认行为；相关教育、临床和非血腥历史新闻并不一概被拒绝。准则仅约束携带它的请求，覆盖整个对话需要每轮发送。<sup><a href="#cite-9">[9]</a> <a href="#cite-10">[10]</a></sup>
+
+下面只展示请求参数片段，**未发送请求**：
+
+```json
+{
+  "guidelines": [
+    {"type": "policy", "category": "violence", "behavior": "decline"}
+  ]
+}
+```
+
+**适用边界**：文档排除 multi-agent 模型（如 `grok-4.20-multi-agent`）和 deferred completions；在既无服务端工具、又无文件附件的请求中，设置 `stop` 或 `n > 1` 也不兼容。接口在推理前拒绝这些组合；无效分类或行为返回 `422`，重复分类、错误 `type` 等返回 `400`。这是文档合同，未独立实测。模型按准则生成的拒绝答复仍保持普通响应形状，不能只用 HTTP 成功与否区分它和参数校验失败。<sup><a href="#cite-9">[9]</a></sup>
+
+以下是**工程推导与建议验收，未运行接口或防护实验**。内容准则约束模型怎样回答；执行端仍要独立决定谁能对哪些资源采取行动。
+
+| 层次 | 应记录的事实 | 验收目标 |
+|---|---|---|
+| 内容准则 | 本轮实际携带的配置与版本、生成结果 | 准则遗漏的回合不会被误报为已覆盖 |
+| 接口校验 | 错误类别、字段和推理是否开始 | 配置拒绝与模型生成的拒绝分别统计 |
+| 行动授权 | 主体、资源、动作、有效策略与外部回执 | 没有许可不派发，未知副作用先核对 |
+
+例如回复没有不当内容，仍不足以授权发送邮件或改写仓库。可以先用本地替身测试准则遗漏、不兼容参数、无效枚举，以及内容合规但动作未获许可的路径；真实端点效果仍待另行验证。当前请求在推理前失败，也不会撤销其他请求已产生的副作用；核对方法见[服务化与故障处置](agent-operations.html)。
 
 ## 安全与正常交付一起测
 
@@ -159,6 +185,8 @@ Muse 的核心公开材料以产品说明为主。本次没有取得可验证的
 
 ## 更新记录与未验证项
 
+- 2026-10-29：核查 xAI 10 月 27 日内容准则更新，补充逐请求范围、排除条件、推理前校验与行动授权的区别；没有 API 或安全实测。既有 Meta 材料的核查日期和未验证项保持不变。
+
 - 2026-10-13：按身份、凭据、数据与行动边界组织内容，补充记忆来源和配对评测；保留 `muse.html`。新增设计为工程推导，未进行安全审计。
 
 - 2026-10-13：纳入 10 月 12 日 Wonder / Wonder Full，确认 Muse App 更新仍是后续 rollout。
@@ -178,5 +206,7 @@ Muse 的核心公开材料以产品说明为主。本次没有取得可验证的
 <li id="cite-6"><a href="https://introducing.muse.ai/">How We Designed Muse</a><span class="source-meta">官方公告指向 · 本次抓取超时，未用于支持内部算法结论</span></li>
 <li id="cite-7"><a href="https://security.muse.ai/">How We Built Safety Into Muse</a><span class="source-meta">官方公告指向 · 本次抓取超时，未验证底层安全细节</span></li>
 <li id="cite-8"><a href="https://www.anthropic.com/engineering/managed-agents">Anthropic · Scaling Managed Agents</a><span class="source-meta">2026-04-08 · 可用的工程学习参照，不能当 Muse 源码</span></li>
+<li id="cite-9"><a href="https://docs.x.ai/developers/advanced-api-usage/custom-moderation-controls">xAI · Custom Moderation Controls</a><span class="source-meta">滚动官方文档 · 2026-10-29 阅读分类、逐请求范围、不兼容组合和校验错误；普通公开 Markdown 版本补全正文 · 接口合同未实测，不作为行动授权或防护效果证明</span></li>
+<li id="cite-10"><a href="https://docs.x.ai/developers/release-notes">xAI · Release Notes，Custom moderation controls</a><span class="source-meta">2026-10-27 日级条目 · 2026-10-29 核查发布记录及指向的文档 · 不补造日内时间</span></li>
 </ol>
 </div></footer>
